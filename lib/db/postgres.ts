@@ -12,6 +12,7 @@ import {
   rowToSession,
   rowToToken,
   rowToUser,
+  rowToHistory,
 } from "./sql-shared";
 
 export type Sql = {
@@ -358,5 +359,22 @@ function wrap(sql: Sql): Store {
         ON CONFLICT (id) DO UPDATE SET payload = ${payload}, updated_at = ${updatedAt}
       `;
     },
+    async addReleaseHistory(entry) {
+      const createdAt = entry.createdAt ?? nowIso();
+      const payload = JSON.stringify(entry.payload);
+      await sql`INSERT INTO release_history (id, kind, payload, uploaded_by_email, uploaded_by_user_id, created_at) VALUES (${entry.id}, ${entry.kind}, ${payload}, ${entry.uploadedByEmail}, ${entry.uploadedByUserId}, ${createdAt})`;
+    },
+    async listReleaseHistory(kind, limit = 30) {
+      const rows = kind
+        ? await sql`SELECT * FROM release_history WHERE kind = ${kind} ORDER BY created_at DESC LIMIT ${limit}`
+        : await sql`SELECT * FROM release_history ORDER BY created_at DESC LIMIT ${limit}`;
+      return rows.map((r) => rowToHistory(r as Record<string, unknown>)).filter((h) => h !== null);
+    },
+    async getReleaseHistoryById(id) {
+      const rows = await sql`SELECT * FROM release_history WHERE id = ${id}`;
+      const row = one(rows);
+      return row ? rowToHistory(row as Record<string, unknown>) : null;
+    },
   };
 }
+

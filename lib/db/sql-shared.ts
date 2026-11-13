@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
+import { parseReleaseFile, isReleaseKind } from "../release";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
   AuditEntry,
   Device,
+  ReleaseHistoryEntry,
   DownloadTokenRow,
   License,
   Order,
@@ -126,6 +128,17 @@ CREATE TABLE IF NOT EXISTS remote_seq (
 CREATE INDEX IF NOT EXISTS idx_remote_undelivered ON remote_messages (device_id, direction, seq);
 CREATE INDEX IF NOT EXISTS idx_remote_created ON remote_messages (created_at);
 CREATE INDEX IF NOT EXISTS idx_remote_device_seq ON remote_messages (device_id, seq);
+
+CREATE TABLE IF NOT EXISTS release_history (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  uploaded_by_email TEXT NOT NULL,
+  uploaded_by_user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_release_history_kind ON release_history (kind, created_at);
 `;
 
 export function loadSchemaFromFile(): string {
@@ -232,6 +245,29 @@ export function rowToAudit(row: Record<string, unknown>): AuditEntry {
     action: String(row.action),
     ip: row.ip == null ? null : String(row.ip),
     meta: row.meta == null ? null : String(row.meta),
+    createdAt: String(row.created_at),
+  };
+}
+
+export function rowToHistory(row: Record<string, unknown>): ReleaseHistoryEntry | null {
+  const kind = String(row.kind ?? "");
+  if (!isReleaseKind(kind)) return null;
+  let parsed: unknown = row.payload;
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return null;
+    }
+  }
+  const payload = parseReleaseFile(kind, parsed);
+  if (!payload) return null;
+  return {
+    id: String(row.id),
+    kind,
+    payload,
+    uploadedByEmail: String(row.uploaded_by_email),
+    uploadedByUserId: String(row.uploaded_by_user_id),
     createdAt: String(row.created_at),
   };
 }

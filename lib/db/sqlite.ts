@@ -13,6 +13,7 @@ import {
   rowToSession,
   rowToToken,
   rowToUser,
+  rowToHistory,
 } from "./sql-shared";
 import type {
   DownloadTokenRow,
@@ -415,5 +416,40 @@ function wrap(db: DatabaseSync): Store {
          ON CONFLICT(id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at`,
       ).run("current", payload, updatedAt);
     },
+    async addReleaseHistory(entry) {
+      const createdAt = entry.createdAt ?? nowIso();
+      db.prepare(
+        `INSERT INTO release_history (id, kind, payload, uploaded_by_email, uploaded_by_user_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(
+        entry.id,
+        entry.kind,
+        JSON.stringify(entry.payload),
+        entry.uploadedByEmail,
+        entry.uploadedByUserId,
+        createdAt,
+      );
+    },
+    async listReleaseHistory(kind, limit = 30) {
+      const rows = (
+        kind
+          ? db
+              .prepare(
+                `SELECT * FROM release_history WHERE kind = ? ORDER BY created_at DESC LIMIT ?`,
+              )
+              .all(kind, limit)
+          : db
+              .prepare(`SELECT * FROM release_history ORDER BY created_at DESC LIMIT ?`)
+              .all(limit)
+      ) as Record<string, unknown>[];
+      return rows.map(rowToHistory).filter((h) => h !== null);
+    },
+    async getReleaseHistoryById(id) {
+      const row = db
+        .prepare(`SELECT * FROM release_history WHERE id = ?`)
+        .get(id) as Record<string, unknown> | undefined;
+      return row ? rowToHistory(row) : null;
+    },
   };
 }
+

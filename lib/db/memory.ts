@@ -1,7 +1,8 @@
-import type { ReleaseManifest } from "../release";
+import type { ReleaseKind, ReleaseManifest } from "../release";
 import type {
   AuditEntry,
   Device,
+  ReleaseHistoryEntry,
   DownloadTokenRow,
   License,
   NewOrderInput,
@@ -24,6 +25,7 @@ export function createMemoryStore(): Store {
   const pairings = new Map<string, PairingRow>();
   const devices = new Map<string, Device>();
   const audit: AuditEntry[] = [];
+  const history: ReleaseHistoryEntry[] = [];
 
   const store: Store = {
     async createOrder(input: NewOrderInput): Promise<Order> {
@@ -317,6 +319,23 @@ export function createMemoryStore(): Store {
     async putReleaseManifest(manifest) {
       releaseManifest = JSON.parse(JSON.stringify(manifest)) as ReleaseManifest;
     },
+    async addReleaseHistory(entry) {
+      history.push({ ...entry, createdAt: entry.createdAt ?? nowIso() });
+    },
+    async listReleaseHistory(kind, limit = 30) {
+      return history
+        .filter((h) => (kind ? h.kind === kind : true))
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .slice(0, limit)
+        .map((h) => ({ ...h, payload: JSON.parse(JSON.stringify(h.payload)) }));
+    },
+    async getReleaseHistoryById(id) {
+      const found = history.find((h) => h.id === id);
+      return found
+        ? { ...found, payload: JSON.parse(JSON.stringify(found.payload)) }
+        : null;
+    },
+
   };
 
   return store;

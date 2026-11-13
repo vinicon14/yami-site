@@ -1,4 +1,4 @@
-import type { ReleaseManifest } from "../release";
+import type { ReleaseFile, ReleaseKind, ReleaseManifest } from "../release";
 export type OrderStatus = "pending" | "paid" | "failed" | "refunded";
 
 export type Order = {
@@ -90,6 +90,16 @@ export type AuditEntry = {
   createdAt: string;
 };
 
+
+export type ReleaseHistoryEntry = {
+  id: string;
+  kind: ReleaseKind;
+  payload: ReleaseFile;
+  uploadedByEmail: string;
+  uploadedByUserId: string;
+  createdAt: string;
+};
+
 export interface Store {
   createOrder(input: NewOrderInput): Promise<Order>;
   getOrderById(id: string): Promise<Order | null>;
@@ -158,7 +168,11 @@ export interface Store {
 
   getReleaseManifest(): Promise<ReleaseManifest | null>;
   putReleaseManifest(manifest: ReleaseManifest): Promise<void>;
+  addReleaseHistory(entry: Omit<ReleaseHistoryEntry, "createdAt"> & { createdAt?: string }): Promise<void>;
+  listReleaseHistory(kind?: ReleaseKind, limit?: number): Promise<ReleaseHistoryEntry[]>;
+  getReleaseHistoryById(id: string): Promise<ReleaseHistoryEntry | null>;
 }
+
 
 export function nowIso(date: Date = new Date()): string {
   return date.toISOString();

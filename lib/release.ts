@@ -60,7 +60,7 @@ export function parseReleaseManifest(input: unknown): ReleaseManifest | null {
   };
 }
 
-function parseReleaseFile(kind: ReleaseKind, input: unknown): ReleaseFile | null {
+export function parseReleaseFile(kind: ReleaseKind, input: unknown): ReleaseFile | null {
   if (!input || typeof input !== "object") return null;
   const raw = input as Record<string, unknown>;
   const filename = typeof raw.filename === "string" ? raw.filename.trim() : "";

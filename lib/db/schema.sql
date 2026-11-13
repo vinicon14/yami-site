@@ -111,3 +111,14 @@ CREATE TABLE IF NOT EXISTS remote_seq (
 CREATE INDEX IF NOT EXISTS idx_remote_undelivered ON remote_messages (device_id, direction, seq);
 CREATE INDEX IF NOT EXISTS idx_remote_created ON remote_messages (created_at);
 CREATE INDEX IF NOT EXISTS idx_remote_device_seq ON remote_messages (device_id, seq);
+
+CREATE TABLE IF NOT EXISTS release_history (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  uploaded_by_email TEXT NOT NULL,
+  uploaded_by_user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_release_history_kind ON release_history (kind, created_at);

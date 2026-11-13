@@ -110,3 +110,7 @@ npm run publish-release -- \
 O manifesto (versão, nome, tamanho, SHA256, data) é gravado no Blob e, se `DATABASE_URL` existir, no Postgres. Trocar um arquivo não exige mudança de código. Sem APK, a página mostra "APK em breve".
 
 Faixa gratuita do Blob (Hobby): 1 GB de armazenamento e 10 GB de transferência por mês — o conjunto atual cabe no armazenamento; a transferência acaba se houver muitos downloads completos no mês (o Hobby não cobra além, só pausa).
+
+## Painel de admin
+
+A página `/admin` não aparece na navegação. Só contas cujo e-mail está em `ADMIN_EMAILS` (lista separada por vírgula) conseguem abrir e enviar o instalador, o portátil e o APK. O arquivo sobe do navegador direto para o Blob privado (`yami-releases`), com token gerado no servidor e multipart. Depois do envio, o manifesto é atualizado do mesmo jeito que `npm run publish-release`.
