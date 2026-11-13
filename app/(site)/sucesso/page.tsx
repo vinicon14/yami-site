@@ -1,6 +1,8 @@
 import { CopyButton } from "@/components/CopyButton";
-import { getSiteUrl } from "@/lib/config";
+import { DownloadButtons } from "@/components/DownloadButtons";
 import { reconcileFromReturn } from "@/lib/fulfill";
+import { getCurrentManifest } from "@/lib/release-store";
+import { toPublicManifest } from "@/lib/release";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -49,9 +51,8 @@ export default async function SucessoPage({
     );
   }
 
-  const downloadUrl = result.downloadToken
-    ? `${getSiteUrl()}/api/download?token=${result.downloadToken}`
-    : null;
+  const manifest = await getCurrentManifest();
+  const publicManifest = manifest ? toPublicManifest(manifest) : null;
 
   return (
     <article className="mx-auto max-w-xl px-5 py-12 md:px-8 md:py-16">
@@ -76,19 +77,12 @@ export default async function SucessoPage({
         </div>
       </div>
 
-      {downloadUrl ? (
-        <div className="mt-6 border border-line p-5">
-          <p className="kicker">Download</p>
-          <p className="mt-2 text-sm text-muted">
-            Expira em {new Date(result.expiresAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} (horário de Brasília).
-          </p>
-          <a
-            href={downloadUrl}
-            className="mt-4 inline-flex border border-ink bg-ink px-4 py-2 text-sm text-paper hover:bg-rust hover:border-rust"
-          >
-            Baixar o instalador
-          </a>
-        </div>
+      {result.downloadToken ? (
+        <DownloadButtons
+          token={result.downloadToken}
+          manifest={publicManifest}
+          expiresAt={result.expiresAt}
+        />
       ) : (
         <p className="mt-6 border border-line bg-paper-2 px-4 py-3 text-sm">
           O limite de downloads deste pedido foi atingido, ou o instalador ainda

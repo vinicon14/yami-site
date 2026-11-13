@@ -85,3 +85,9 @@ CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (email);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions (user_id);
 CREATE INDEX IF NOT EXISTS idx_devices_user ON devices (user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log (user_id);
+
+CREATE TABLE IF NOT EXISTS release_manifest (
+  id TEXT PRIMARY KEY,
+  payload TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);

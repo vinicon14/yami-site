@@ -36,5 +36,6 @@ export async function GET(req: Request) {
     })),
     orders,
     devices,
+    hasLicense: licenses.length > 0,
   });
 }

@@ -2,6 +2,7 @@ import { getSessionUser, readSessionCookie } from "@/lib/auth";
 import { getStore } from "@/lib/db";
 import { clientIp, jsonError, sameOrigin } from "@/lib/http";
 import { confirmPairing } from "@/lib/pairing";
+import { LICENSE_MISSING_HINT, LICENSE_MISSING_TITLE, userHasPaidLicense } from "@/lib/license-gate";
 import { rateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
@@ -14,6 +15,11 @@ export async function POST(req: Request) {
   if (!limited.ok) return jsonError("muitas tentativas, tente mais tarde", 429);
   const current = await getSessionUser(readSessionCookie(req));
   if (!current) return jsonError("entre na sua conta para parear", 401);
+  const storeForLicense = await getStore();
+  if (!(await userHasPaidLicense(current.user.email, storeForLicense))) {
+    return jsonError(`${LICENSE_MISSING_TITLE} ${LICENSE_MISSING_HINT}`, 403);
+  }
+
 
   let body: Record<string, unknown>;
   try {

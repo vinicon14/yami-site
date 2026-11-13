@@ -1,3 +1,5 @@
+import { parseReleaseManifest } from "../release";
+import type { ReleaseManifest } from "../release";
 import type { NewOrderInput, Order, Store } from "./types";
 import { nowIso } from "./types";
 import {
@@ -297,6 +299,26 @@ function wrap(sql: Sql): Store {
     async listAudit(userId, limit = 50) {
       const rows = await sql`SELECT * FROM audit_log WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}`;
       return rows.map((r) => rowToAudit(r as Record<string, unknown>));
+    },
+
+    async getReleaseManifest() {
+      const rows = await sql`SELECT payload FROM release_manifest WHERE id = ${"current"}`;
+      const row = one(rows);
+      if (!row) return null;
+      try {
+        return parseReleaseManifest(JSON.parse(String(row.payload)));
+      } catch {
+        return null;
+      }
+    },
+    async putReleaseManifest(manifest: ReleaseManifest) {
+      const payload = JSON.stringify(manifest);
+      const updatedAt = nowIso();
+      await sql`
+        INSERT INTO release_manifest (id, payload, updated_at)
+        VALUES (${"current"}, ${payload}, ${updatedAt})
+        ON CONFLICT (id) DO UPDATE SET payload = ${payload}, updated_at = ${updatedAt}
+      `;
     },
   };
 }

@@ -1,3 +1,5 @@
+import type { ReleaseManifest } from "../release";
+import { parseReleaseManifest } from "../release";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
@@ -392,6 +394,26 @@ function wrap(db: DatabaseSync): Store {
         )
         .all(userId, limit) as Record<string, unknown>[];
       return rows.map(rowToAudit);
+    },
+
+    async getReleaseManifest() {
+      const row = db
+        .prepare(`SELECT payload FROM release_manifest WHERE id = ?`)
+        .get("current") as { payload: string } | undefined;
+      if (!row) return null;
+      try {
+        return parseReleaseManifest(JSON.parse(row.payload));
+      } catch {
+        return null;
+      }
+    },
+    async putReleaseManifest(manifest) {
+      const payload = JSON.stringify(manifest);
+      const updatedAt = nowIso();
+      db.prepare(
+        `INSERT INTO release_manifest (id, payload, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at`,
+      ).run("current", payload, updatedAt);
     },
   };
 }

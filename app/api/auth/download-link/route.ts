@@ -3,6 +3,7 @@ import { getSessionUser, readSessionCookie } from "@/lib/auth";
 import { getStore } from "@/lib/db";
 import { issueDownloadToken } from "@/lib/fulfill";
 import { jsonError, sameOrigin } from "@/lib/http";
+import { getCurrentManifest } from "@/lib/release-store";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,10 +32,18 @@ export async function POST(req: Request) {
   if (!issued.token) {
     return jsonError("este pedido já atingiu o limite de downloads", 410);
   }
+  const manifest = await getCurrentManifest(store);
+  const token = issued.token;
   return NextResponse.json({
     ok: true,
-    token: issued.token,
+    token,
     expiresAt: issued.expiresAt,
-    url: `/api/download?token=${issued.token}`,
+    url: `/api/download?token=${token}&file=setup`,
+    urls: {
+      setup: `/api/download?token=${token}&file=setup`,
+      portable: `/api/download?token=${token}&file=portable`,
+      apk: manifest?.files.apk ? `/api/download?token=${token}&file=apk` : null,
+    },
+    apkComingSoon: !manifest?.files.apk,
   });
 }

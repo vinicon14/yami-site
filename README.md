@@ -89,3 +89,21 @@ recusa de valor ou status errado, e idempotência.
   dispara pagamento de verdade nos testes. Uma preferência de Checkout Pro
   (sem pagar) pode ser criada só para confirmar que a `notification_url`
   é aceita.
+
+
+## Publicar um instalador
+
+Os arquivos (instalador Windows, Windows portátil e APK) ficam num Blob privado da Vercel. O site só entrega um link assinado, de curta validade, depois de validar o token de download. A URL permanente nunca aparece na página.
+
+```bash
+# No computador que tem os arquivos, com BLOB_READ_WRITE_TOKEN no ambiente:
+npm run publish-release -- \
+  --setup /caminho/YAMI-0.62.0-forage-v4-setup-x64.exe \
+  --portable /caminho/YAMI-0.62.0-forage-v4-portable-x64.exe \
+  --apk /caminho/YAMI-1.4.6.apk \
+  --version 0.62.0
+```
+
+O manifesto (versão, nome, tamanho, SHA256, data) é gravado no Blob e, se `DATABASE_URL` existir, no Postgres. Trocar um arquivo não exige mudança de código. Sem APK, a página mostra "APK em breve".
+
+Faixa gratuita do Blob (Hobby): 1 GB de armazenamento e 10 GB de transferência por mês — o conjunto atual cabe no armazenamento; a transferência acaba se houver muitos downloads completos no mês (o Hobby não cobra além, só pausa).

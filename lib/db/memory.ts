@@ -1,3 +1,4 @@
+import type { ReleaseManifest } from "../release";
 import type {
   AuditEntry,
   Device,
@@ -13,6 +14,8 @@ import type {
 import { nowIso } from "./types";
 
 export function createMemoryStore(): Store {
+  let releaseManifest: ReleaseManifest | null = null;
+
   const orders = new Map<string, Order>();
   const licenses = new Map<string, License>();
   const tokens = new Map<string, DownloadTokenRow>();
@@ -304,6 +307,15 @@ export function createMemoryStore(): Store {
         .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
         .slice(0, limit)
         .map((a) => ({ ...a }));
+    },
+
+    async getReleaseManifest() {
+      return releaseManifest
+        ? (JSON.parse(JSON.stringify(releaseManifest)) as ReleaseManifest)
+        : null;
+    },
+    async putReleaseManifest(manifest) {
+      releaseManifest = JSON.parse(JSON.stringify(manifest)) as ReleaseManifest;
     },
   };
 

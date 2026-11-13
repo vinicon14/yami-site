@@ -1,6 +1,7 @@
 "use client";
 
 import { CopyButton } from "./CopyButton";
+import { LicenseRequired } from "./LicenseRequired";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -35,7 +36,9 @@ export function AccountPanel({
 }) {
   const router = useRouter();
   const [msg, setMsg] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [downloadToken, setDownloadToken] = useState<string | null>(null);
+  const [downloadExpires, setDownloadExpires] = useState<string | null>(null);
+  const [apkReady, setApkReady] = useState(true);
   const [code, setCode] = useState("");
   const [deviceName, setDeviceName] = useState("PC de casa");
 
@@ -52,13 +55,20 @@ export function AccountPanel({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId }),
     });
-    const data = (await res.json()) as { error?: string; url?: string };
+    const data = (await res.json()) as {
+      error?: string;
+      token?: string;
+      expiresAt?: string;
+      apkComingSoon?: boolean;
+    };
     if (!res.ok) {
       setMsg(data.error ?? "não foi possível emitir o link");
       return;
     }
-    setDownloadUrl(data.url ?? null);
-    setMsg("Link emitido. Ele vale 24 horas.");
+    setDownloadToken(data.token ?? null);
+    setDownloadExpires(data.expiresAt ?? null);
+    setApkReady(!data.apkComingSoon);
+    setMsg("Links emitidos. Valem 24 horas e têm um limite de usos.");
   }
 
   async function confirm() {
@@ -104,14 +114,9 @@ export function AccountPanel({
       <section>
         <h2 className="font-serif text-2xl font-medium">Licenças</h2>
         {licenses.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">
-            Nenhuma licença ligada a este e-mail. Se você já comprou, use o mesmo
-            e-mail da compra, ou{" "}
-            <Link href="/checkout" className="text-rust underline underline-offset-2">
-              compre a YAMI
-            </Link>
-            .
-          </p>
+          <div className="mt-4">
+            <LicenseRequired />
+          </div>
         ) : (
           <ul className="mt-4 space-y-4">
             {licenses.map((l) => (
@@ -131,12 +136,46 @@ export function AccountPanel({
             ))}
           </ul>
         )}
-        {downloadUrl && (
-          <p className="mt-3 text-sm">
-            <a href={downloadUrl} className="text-rust underline underline-offset-2">
-              Baixar o instalador
-            </a>
-          </p>
+        {downloadToken && (
+          <ul className="mt-4 space-y-2 text-sm">
+            <li>
+              <a
+                href={`/api/download?token=${downloadToken}&file=setup`}
+                className="text-rust underline underline-offset-2"
+              >
+                Baixar instalador Windows
+              </a>
+            </li>
+            <li>
+              <a
+                href={`/api/download?token=${downloadToken}&file=portable`}
+                className="text-rust underline underline-offset-2"
+              >
+                Baixar Windows portátil
+              </a>
+            </li>
+            <li>
+              {apkReady ? (
+                <a
+                  href={`/api/download?token=${downloadToken}&file=apk`}
+                  className="text-rust underline underline-offset-2"
+                >
+                  Baixar aplicativo Android (APK)
+                </a>
+              ) : (
+                <span className="text-muted">APK em breve</span>
+              )}
+            </li>
+            {downloadExpires ? (
+              <li className="text-xs text-muted">
+                Expira em{" "}
+                {new Date(downloadExpires).toLocaleString("pt-BR", {
+                  timeZone: "America/Sao_Paulo",
+                })}{" "}
+                (horário de Brasília).
+              </li>
+            ) : null}
+          </ul>
         )}
       </section>
 

@@ -1,3 +1,4 @@
+import type { ReleaseManifest } from "../release";
 export type OrderStatus = "pending" | "paid" | "failed" | "refunded";
 
 export type Order = {
@@ -154,6 +155,9 @@ export interface Store {
 
   addAudit(entry: Omit<AuditEntry, "createdAt"> & { createdAt?: string }): Promise<void>;
   listAudit(userId: string, limit?: number): Promise<AuditEntry[]>;
+
+  getReleaseManifest(): Promise<ReleaseManifest | null>;
+  putReleaseManifest(manifest: ReleaseManifest): Promise<void>;
 }
 
 export function nowIso(date: Date = new Date()): string {
