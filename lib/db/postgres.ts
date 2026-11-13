@@ -1,0 +1,302 @@
+import type { NewOrderInput, Order, Store } from "./types";
+import { nowIso } from "./types";
+import {
+  SCHEMA_SQL,
+  rowToAudit,
+  rowToDevice,
+  rowToLicense,
+  rowToOrder,
+  rowToPairing,
+  rowToSession,
+  rowToToken,
+  rowToUser,
+} from "./sql-shared";
+
+type Sql = {
+  (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>;
+  unsafe(query: string): Promise<unknown>;
+};
+
+let singleton: { url: string; store: Store } | null = null;
+
+export async function getPostgresStore(url: string): Promise<Store> {
+  if (singleton && singleton.url === url) return singleton.store;
+  const postgres = (await import("postgres")).default;
+  const ssl =
+    process.env.DATABASE_SSL === "false"
+      ? false
+      : url.includes("localhost") || url.includes("127.0.0.1")
+        ? false
+        : "require";
+  const sql = postgres(url, { ssl, max: 1, idle_timeout: 20 }) as unknown as Sql;
+  await ensureSchema(sql);
+  const store = wrap(sql);
+  singleton = { url, store };
+  return store;
+}
+
+async function ensureSchema(sql: Sql): Promise<void> {
+  await sql.unsafe(SCHEMA_SQL);
+}
+
+function one(rows: unknown[]): Record<string, unknown> | null {
+  const row = rows[0];
+  return row ? (row as Record<string, unknown>) : null;
+}
+
+function wrap(sql: Sql): Store {
+  return {
+    async createOrder(input: NewOrderInput): Promise<Order> {
+      const createdAt = nowIso();
+      const rows = await sql`
+        INSERT INTO orders (id, email, name, amount_brl, currency, status, created_at)
+        VALUES (${input.id}, ${input.email.toLowerCase()}, ${input.name ?? null}, ${input.amountBrl}, 'BRL', 'pending', ${createdAt})
+        RETURNING *
+      `;
+      return rowToOrder(one(rows) as Record<string, unknown>);
+    },
+
+    async getOrderById(id) {
+      const rows = await sql`SELECT * FROM orders WHERE id = ${id}`;
+      const row = one(rows);
+      return row ? rowToOrder(row) : null;
+    },
+
+    async getOrderByPaymentId(paymentId) {
+      const rows = await sql`SELECT * FROM orders WHERE mp_payment_id = ${paymentId}`;
+      const row = one(rows);
+      return row ? rowToOrder(row) : null;
+    },
+
+    async getOrdersByEmail(email) {
+      const rows = await sql`SELECT * FROM orders WHERE email = ${email.toLowerCase()} ORDER BY created_at DESC`;
+      return rows.map((r) => rowToOrder(r as Record<string, unknown>));
+    },
+
+    async setPreferenceId(orderId, preferenceId) {
+      await sql`UPDATE orders SET mp_preference_id = ${preferenceId} WHERE id = ${orderId}`;
+    },
+
+    async markPaid(orderId, paymentId, paidAt) {
+      const paid = nowIso(paidAt ?? new Date());
+      await sql`UPDATE orders SET status = 'paid', mp_payment_id = ${paymentId}, paid_at = ${paid} WHERE id = ${orderId}`;
+      const order = await this.getOrderById(orderId);
+      if (!order) throw new Error("pedido não encontrado");
+      return order;
+    },
+
+    async markFailed(orderId) {
+      await sql`UPDATE orders SET status = 'failed' WHERE id = ${orderId} AND status != 'paid'`;
+    },
+
+    async createLicense(orderId, key) {
+      const existing = await this.getLicenseByOrderId(orderId);
+      if (existing) return existing;
+      const id = crypto.randomUUID();
+      const createdAt = nowIso();
+      await sql`INSERT INTO licenses (id, order_id, key, created_at) VALUES (${id}, ${orderId}, ${key}, ${createdAt})`;
+      return { id, orderId, key, createdAt };
+    },
+
+    async getLicenseByOrderId(orderId) {
+      const rows = await sql`SELECT * FROM licenses WHERE order_id = ${orderId}`;
+      const row = one(rows);
+      return row ? rowToLicense(row) : null;
+    },
+
+    async getLicensesByEmail(email) {
+      const rows = await sql`
+        SELECT l.*, o.email AS order_email FROM licenses l
+        JOIN orders o ON o.id = l.order_id
+        WHERE o.email = ${email.toLowerCase()}
+      `;
+      return rows.map((r) => {
+        const row = r as Record<string, unknown>;
+        return { ...rowToLicense(row), orderEmail: String(row.order_email) };
+      });
+    },
+
+    async createDownloadToken(row) {
+      const createdAt = row.createdAt ?? nowIso();
+      await sql`
+        INSERT INTO download_tokens
+          (id, order_id, license_id, token_hash, expires_at, downloads_used, max_downloads, created_at)
+        VALUES (${row.id}, ${row.orderId}, ${row.licenseId}, ${row.tokenHash}, ${row.expiresAt}, ${row.downloadsUsed}, ${row.maxDownloads}, ${createdAt})
+      `;
+      return { ...row, createdAt };
+    },
+
+    async getDownloadTokenByHash(hash) {
+      const rows = await sql`SELECT * FROM download_tokens WHERE token_hash = ${hash}`;
+      const row = one(rows);
+      return row ? rowToToken(row) : null;
+    },
+
+    async getLatestDownloadToken(orderId) {
+      const rows = await sql`SELECT * FROM download_tokens WHERE order_id = ${orderId} ORDER BY created_at DESC LIMIT 1`;
+      const row = one(rows);
+      return row ? rowToToken(row) : null;
+    },
+
+    async incrementDownload(tokenId) {
+      const rows = await sql`
+        UPDATE download_tokens SET downloads_used = downloads_used + 1 WHERE id = ${tokenId}
+        RETURNING *
+      `;
+      const row = one(rows);
+      if (!row) throw new Error("token não encontrado");
+      return rowToToken(row);
+    },
+
+    async totalDownloadsForOrder(orderId) {
+      const rows = await sql`SELECT COALESCE(SUM(downloads_used), 0) AS n FROM download_tokens WHERE order_id = ${orderId}`;
+      return Number((one(rows) as { n: number } | null)?.n ?? 0);
+    },
+
+    async createUser(input) {
+      const createdAt = nowIso();
+      const email = input.email.toLowerCase();
+      await sql`INSERT INTO users (id, email, name, password_hash, created_at) VALUES (${input.id}, ${email}, ${input.name ?? null}, ${input.passwordHash}, ${createdAt})`;
+      return { id: input.id, email, name: input.name ?? null, passwordHash: input.passwordHash, createdAt };
+    },
+
+    async getUserByEmail(email) {
+      const rows = await sql`SELECT * FROM users WHERE email = ${email.toLowerCase()}`;
+      const row = one(rows);
+      return row ? rowToUser(row) : null;
+    },
+
+    async getUserById(id) {
+      const rows = await sql`SELECT * FROM users WHERE id = ${id}`;
+      const row = one(rows);
+      return row ? rowToUser(row) : null;
+    },
+
+    async createSession(input) {
+      const createdAt = nowIso();
+      await sql`INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at, user_agent) VALUES (${input.id}, ${input.userId}, ${input.tokenHash}, ${input.expiresAt}, ${createdAt}, ${input.userAgent ?? null})`;
+      return {
+        id: input.id,
+        userId: input.userId,
+        tokenHash: input.tokenHash,
+        expiresAt: input.expiresAt,
+        createdAt,
+        userAgent: input.userAgent ?? null,
+      };
+    },
+
+    async getSessionByTokenHash(hash) {
+      const rows = await sql`SELECT * FROM sessions WHERE token_hash = ${hash}`;
+      const row = one(rows);
+      return row ? rowToSession(row) : null;
+    },
+
+    async deleteSession(id) {
+      await sql`DELETE FROM sessions WHERE id = ${id}`;
+    },
+
+    async deleteSessionsForUser(userId) {
+      await sql`DELETE FROM sessions WHERE user_id = ${userId}`;
+    },
+
+    async createPairing(row) {
+      await sql`
+        INSERT INTO pairings
+          (id, code_hash, poll_token_hash, user_id, device_id, device_name, pending_device_token, expires_at, consumed_at, created_at)
+        VALUES (${row.id}, ${row.codeHash}, ${row.pollTokenHash}, ${row.userId}, ${row.deviceId}, ${row.deviceName}, ${row.pendingDeviceToken}, ${row.expiresAt}, ${row.consumedAt}, ${row.createdAt})
+      `;
+      return { ...row };
+    },
+
+    async getPairingByCodeHash(hash) {
+      const rows = await sql`SELECT * FROM pairings WHERE code_hash = ${hash}`;
+      const row = one(rows);
+      return row ? rowToPairing(row) : null;
+    },
+
+    async getPairingByPollHash(hash) {
+      const rows = await sql`SELECT * FROM pairings WHERE poll_token_hash = ${hash}`;
+      const row = one(rows);
+      return row ? rowToPairing(row) : null;
+    },
+
+    async confirmPairing(input) {
+      const consumedAt = nowIso();
+      const rows = await sql`
+        UPDATE pairings
+        SET user_id = ${input.userId}, device_id = ${input.deviceId}, device_name = ${input.deviceName},
+            pending_device_token = ${input.pendingDeviceToken}, consumed_at = ${consumedAt}
+        WHERE id = ${input.id}
+        RETURNING *
+      `;
+      const row = one(rows);
+      if (!row) throw new Error("pareamento não encontrado");
+      return rowToPairing(row);
+    },
+
+    async claimPairing(id) {
+      const rows = await sql`SELECT * FROM pairings WHERE id = ${id}`;
+      const row = one(rows);
+      if (!row) throw new Error("pareamento não encontrado");
+      const current = rowToPairing(row);
+      await sql`UPDATE pairings SET pending_device_token = NULL WHERE id = ${id}`;
+      return current;
+    },
+
+    async createDevice(input) {
+      const createdAt = nowIso();
+      await sql`INSERT INTO devices (id, user_id, name, token_hash, created_at) VALUES (${input.id}, ${input.userId}, ${input.name}, ${input.tokenHash}, ${createdAt})`;
+      return {
+        id: input.id,
+        userId: input.userId,
+        name: input.name,
+        tokenHash: input.tokenHash,
+        createdAt,
+        lastSeenAt: null,
+        revokedAt: null,
+      };
+    },
+
+    async getDeviceById(id) {
+      const rows = await sql`SELECT * FROM devices WHERE id = ${id}`;
+      const row = one(rows);
+      return row ? rowToDevice(row) : null;
+    },
+
+    async getDeviceByTokenHash(hash) {
+      const rows = await sql`SELECT * FROM devices WHERE token_hash = ${hash}`;
+      const row = one(rows);
+      return row ? rowToDevice(row) : null;
+    },
+
+    async listDevices(userId) {
+      const rows = await sql`SELECT * FROM devices WHERE user_id = ${userId} ORDER BY created_at DESC`;
+      return rows.map((r) => rowToDevice(r as Record<string, unknown>));
+    },
+
+    async touchDevice(id) {
+      const now = nowIso();
+      await sql`UPDATE devices SET last_seen_at = ${now} WHERE id = ${id}`;
+    },
+
+    async revokeDevice(id, userId) {
+      const now = nowIso();
+      await sql`UPDATE devices SET revoked_at = ${now} WHERE id = ${id} AND user_id = ${userId} AND revoked_at IS NULL`;
+      const rows = await sql`SELECT * FROM devices WHERE id = ${id}`;
+      const row = one(rows);
+      if (!row) return null;
+      const d = rowToDevice(row);
+      return d.userId === userId ? d : null;
+    },
+
+    async addAudit(entry) {
+      const createdAt = entry.createdAt ?? nowIso();
+      await sql`INSERT INTO audit_log (id, user_id, device_id, action, ip, meta, created_at) VALUES (${entry.id}, ${entry.userId}, ${entry.deviceId}, ${entry.action}, ${entry.ip}, ${entry.meta}, ${createdAt})`;
+    },
+
+    async listAudit(userId, limit = 50) {
+      const rows = await sql`SELECT * FROM audit_log WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}`;
+      return rows.map((r) => rowToAudit(r as Record<string, unknown>));
+    },
+  };
+}
