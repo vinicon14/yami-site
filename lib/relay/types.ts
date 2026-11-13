@@ -1,3 +1,5 @@
+import type { RelayDirection } from "./protocol";
+
 export type RelayKind =
   | "chat"
   | "forage"
@@ -9,6 +11,9 @@ export type RelayKind =
 
 export type RelayMessage = {
   id: string;
+  seq: number;
+  deviceId: string;
+  direction: RelayDirection;
   kind: RelayKind;
   payload: unknown;
   /** Ações de arquivo ou comando devem ser aprovadas no PC de casa. */
@@ -23,12 +28,34 @@ export type DesktopStatus = {
   lastSeenAt: string | null;
 };
 
+export type PullOptions = {
+  afterSeq?: number;
+  waitMs?: number;
+  /** Devolve o histórico recente (ambos os sentidos) quando afterSeq é 0. */
+  history?: boolean;
+  limit?: number;
+  signal?: AbortSignal;
+};
+
+export type PullResult = {
+  messages: RelayMessage[];
+  lastSeq: number;
+};
+
+export type RelayPushInput = {
+  kind: RelayKind;
+  payload: unknown;
+  from: "browser" | "desktop";
+  needsLocalApproval?: boolean;
+};
+
 export interface RelayAdapter {
   setDesktopOnline(deviceId: string, online: boolean): Promise<void>;
   isDesktopOnline(deviceId: string): Promise<boolean>;
   getStatus(deviceId: string): Promise<DesktopStatus>;
-  pushToDesktop(deviceId: string, message: Omit<RelayMessage, "id" | "createdAt">): Promise<RelayMessage>;
-  pullForDesktop(deviceId: string): Promise<RelayMessage[]>;
-  pushToBrowser(userId: string, message: Omit<RelayMessage, "id" | "createdAt">): Promise<RelayMessage>;
-  pullForBrowser(userId: string): Promise<RelayMessage[]>;
+  pushToDevice(deviceId: string, message: RelayPushInput): Promise<RelayMessage>;
+  pullForDevice(deviceId: string, opts?: PullOptions): Promise<PullResult>;
+  pushToPainel(deviceId: string, message: RelayPushInput): Promise<RelayMessage>;
+  pullForPainel(deviceId: string, opts?: PullOptions): Promise<PullResult>;
+  purgeExpired(now?: Date): Promise<number>;
 }

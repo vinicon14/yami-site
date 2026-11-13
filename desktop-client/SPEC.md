@@ -4,6 +4,8 @@ Este diretório descreve como o aplicativo Windows se liga ao site da YAMI
 (pareamento e painel remoto). Não altere o `build-src` da YAMI a partir
 deste repositório: copie ou importe este módulo no código do aplicativo.
 
+A integração completa, com IPC e exemplos, está em `INTEGRATION.md`.
+
 ## Visão geral
 
 1. A pessoa instala a YAMI no PC de casa e a deixa aberta.
@@ -12,11 +14,12 @@ deste repositório: copie ou importe este módulo no código do aplicativo.
    digita o código.
 4. O aplicativo coleta `GET /api/pairing/poll?pollToken=…` até receber
    `status: "ready"` com um `deviceToken`. Guarda o token com segurança.
-5. Daí em diante, o aplicativo faz a conexão de saída: coleta
-   `GET /api/relay/desktop` com `Authorization: Bearer <deviceToken>` e
-   envia respostas em `POST /api/relay/desktop`.
-6. O painel no navegador nunca abre uma porta no PC. Se o aplicativo estiver
-   fechado, o painel avisa que o dispositivo está desligado.
+5. Daí em diante, o aplicativo faz a conexão de saída:
+   `GET /api/relay/device/pull?afterSeq=&waitMs=` com
+   `Authorization: Bearer <deviceToken>` (long-poll até 25 s, ou coleta
+   curta 1–2 s) e envia respostas em `POST /api/relay/device/push`.
+6. O painel no navegador nunca abre uma porta no PC. O aparelho aparece
+   **ligado** se o último pull tiver menos de 30 segundos.
 
 ## Pareamento
 
@@ -39,33 +42,39 @@ Sem autenticação. Resposta:
 - `consumed` — já foi coletado.
 - `expired` — peça um código novo.
 
-### `POST /api/pairing/confirm` (site, pessoa autenticada)
+### `POST /api/pairing/confirm` (site, pessoa autenticada e com licença)
 
 Corpo: `{ "code", "deviceName" }`. Liga o aparelho à conta.
 
 ### `POST /api/pairing/revoke`
 
-A pessoa desconecta o aparelho. O próximo `GET /api/relay/desktop` responde 401.
+A pessoa desconecta o aparelho. O próximo `GET /api/relay/device/pull`
+responde 401.
 
-## Relé
+## Relé (Postgres, `RELAY_PROVIDER=postgres`)
 
-Vercel não segura WebSocket longo. O protocolo atual é coleta periódica
-(2–3 s). A interface (`lib/relay`) admite um provedor gerenciado (Ably,
-Pusher) ou um processo pequeno (Fly.io, Railway); veja `docs/RELAY.md`.
+Filas em `remote_messages` no Neon já ligado ao projeto. Sem WebSocket,
+sem conta extra. O protocolo é long-poll HTTP (até 25 s, dentro do
+limite da Vercel) ou coleta curta.
 
-### `GET /api/relay/desktop`
+### `GET /api/relay/device/pull`
 
-Cabeçalho `Authorization: Bearer <deviceToken>`. Marca o aparelho como
-online e devolve `{ messages: RelayMessage[] }`.
+Cabeçalho `Authorization: Bearer <deviceToken>`. Query: `afterSeq`,
+`waitMs`. Marca o aparelho como visto e devolve
+`{ ok, deviceId, messages, lastSeq, serverTime }`.
 
-### `POST /api/relay/desktop`
+### `POST /api/relay/device/push`
 
-Envia um evento ao navegador: `{ kind, payload, needsLocalApproval }`.
+Envia um evento ao painel: `{ kind, payload, needsLocalApproval }`.
 
-### `GET`/`POST /api/relay/browser`
+### Painel
 
-Usado pelo painel, com o cookie de sessão. O `POST` exige `deviceId`.
-Se o PC estiver offline, responde 409 com uma mensagem clara.
+`GET`/`POST /api/relay/painel/pull` e `/push`, com o cookie de sessão e
+licença paga. O `POST` exige `deviceId` e a origem do site. Pedidos para
+um PC desligado entram na fila.
+
+As rotas antigas `/api/relay/desktop` e `/api/relay/browser` continuam
+como apelido.
 
 ## Aprovação local (obrigatória)
 
@@ -76,8 +85,10 @@ trava. Use `YamiDesktopClient.handleIncoming`.
 
 ## Segurança
 
-- Rate limit nos endpoints de pareamento e login.
+- Só conta com licença paga usa o relé.
+- Rate limit nos endpoints de pareamento, relé e login.
 - Tokens de aparelho e de sessão ficam só como hash no servidor.
+- Teto de 64 KiB por mensagem; mensagens expiram em 7 dias.
 - Registro de acesso (`audit_log`) na conta, com opção de desconectar.
 - Nunca envie chaves, senhas, carteiras ou o `deviceToken` em log.
-- A origem das rotas de conta é checada (mesmo site).
+- A origem das rotas de conta e do push do painel é checada (mesmo site).

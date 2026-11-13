@@ -148,8 +148,10 @@ export function getResendApiKey(): string {
   return readEnv("RESEND_API_KEY");
 }
 
-export function getRelayProvider(): "memory" | "ably" | "pusher" {
+export type RelayProvider = "memory" | "postgres" | "ably" | "pusher";
+
+export function getRelayProvider(): RelayProvider {
   const raw = readEnv("RELAY_PROVIDER", "memory").toLowerCase();
-  if (raw === "ably" || raw === "pusher") return raw;
+  if (raw === "postgres" || raw === "ably" || raw === "pusher") return raw;
   return "memory";
 }

@@ -91,3 +91,23 @@ CREATE TABLE IF NOT EXISTS release_manifest (
   payload TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS remote_messages (
+  id TEXT PRIMARY KEY,
+  device_id TEXT NOT NULL,
+  direction TEXT NOT NULL,
+  seq BIGINT NOT NULL,
+  payload TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  delivered_at TEXT,
+  UNIQUE (device_id, seq)
+);
+
+CREATE TABLE IF NOT EXISTS remote_seq (
+  device_id TEXT PRIMARY KEY,
+  last_seq BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_remote_undelivered ON remote_messages (device_id, direction, seq);
+CREATE INDEX IF NOT EXISTS idx_remote_created ON remote_messages (created_at);
+CREATE INDEX IF NOT EXISTS idx_remote_device_seq ON remote_messages (device_id, seq);

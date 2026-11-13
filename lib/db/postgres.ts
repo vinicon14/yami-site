@@ -14,15 +14,32 @@ import {
   rowToUser,
 } from "./sql-shared";
 
-type Sql = {
+export type Sql = {
   (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>;
   unsafe(query: string): Promise<unknown>;
 };
 
-let singleton: { url: string; store: Store } | null = null;
+let clientSingleton: { url: string; sql: Sql } | null = null;
+let storeSingleton: { url: string; store: Store } | null = null;
 
-export async function getPostgresStore(url: string): Promise<Store> {
-  if (singleton && singleton.url === url) return singleton.store;
+const POSTGRES_RELAY_JSONB = `
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'remote_messages'
+      AND column_name = 'payload'
+      AND data_type = 'text'
+  ) THEN
+    ALTER TABLE remote_messages
+      ALTER COLUMN payload TYPE JSONB USING payload::jsonb;
+  END IF;
+END $$;
+`;
+
+export async function getPostgresClient(url: string): Promise<Sql> {
+  if (clientSingleton && clientSingleton.url === url) return clientSingleton.sql;
   const postgres = (await import("postgres")).default;
   const ssl =
     process.env.DATABASE_SSL === "false"
@@ -30,15 +47,36 @@ export async function getPostgresStore(url: string): Promise<Store> {
       : url.includes("localhost") || url.includes("127.0.0.1")
         ? false
         : "require";
-  const sql = postgres(url, { ssl, max: 1, idle_timeout: 20 }) as unknown as Sql;
+  const sql = postgres(url, {
+    ssl,
+    max: 5,
+    idle_timeout: 20,
+    connect_timeout: 30,
+    prepare: false,
+  }) as unknown as Sql;
   await ensureSchema(sql);
+  clientSingleton = { url, sql };
+  return sql;
+}
+
+export async function getPostgresStore(url: string): Promise<Store> {
+  if (storeSingleton && storeSingleton.url === url) return storeSingleton.store;
+  const sql = await getPostgresClient(url);
   const store = wrap(sql);
-  singleton = { url, store };
+  storeSingleton = { url, store };
   return store;
 }
 
 async function ensureSchema(sql: Sql): Promise<void> {
   await sql.unsafe(SCHEMA_SQL);
+  try {
+    await sql.unsafe(POSTGRES_RELAY_JSONB);
+  } catch (err) {
+    console.warn(
+      "yami_relay_jsonb_alter",
+      err instanceof Error ? err.message : err,
+    );
+  }
 }
 
 function one(rows: unknown[]): Record<string, unknown> | null {

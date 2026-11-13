@@ -1,5 +1,4 @@
 import { getSessionUser } from "@/lib/auth";
-import { getRelayProvider } from "@/lib/config";
 import { getStore } from "@/lib/db";
 import { userHasPaidLicense } from "@/lib/license-gate";
 import { cookies } from "next/headers";
@@ -7,6 +6,7 @@ import { redirect } from "next/navigation";
 import { PainelApp } from "@/components/painel/PainelApp";
 import { LicenseRequired } from "@/components/LicenseRequired";
 import { PainelEmBreve } from "@/components/PainelEmBreve";
+import { isRelayReady } from "@/lib/relay";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +29,7 @@ export default async function PainelPage() {
     return <LicenseRequired variant="dark" />;
   }
 
-  const relay = getRelayProvider();
-  // Na Vercel o relé em memória não atravessa instâncias serverless.
-  // Fora da Vercel (dev local) o relé em memória funciona neste processo.
-  const relayReady =
-    relay === "ably" || relay === "pusher" || (relay === "memory" && !process.env.VERCEL);
-  if (!relayReady) {
+  if (!isRelayReady()) {
     return <PainelEmBreve email={current.user.email} />;
   }
 

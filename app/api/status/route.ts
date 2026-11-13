@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { formatPriceBrl, getMpMode, getPriceBrl, getRelayProvider, salesOpen, PRODUCT } from "@/lib/config";
+import { isRelayReady } from "@/lib/relay";
 import { getCurrentManifest } from "@/lib/release-store";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export async function GET() {
   };
   const installerReady = files.setup || files.portable;
   const relayProvider = getRelayProvider();
-  const relayReady = relayProvider === "ably" || relayProvider === "pusher";
+  const relayReady = isRelayReady();
   return NextResponse.json({
     product: PRODUCT.name,
     version: manifest?.version ?? PRODUCT.version,
@@ -26,6 +27,7 @@ export async function GET() {
     files,
     apkComingSoon: !files.apk,
     relayReady,
+    relayProvider,
     publishedAt: manifest?.publishedAt ?? null,
   });
 }

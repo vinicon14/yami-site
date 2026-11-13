@@ -19,8 +19,13 @@ export type RelayKind =
   | "status"
   | "event";
 
+export type RelayDirection = "up" | "down";
+
 export type RelayMessage = {
   id: string;
+  seq: number;
+  deviceId: string;
+  direction: RelayDirection;
   kind: RelayKind;
   payload: unknown;
   needsLocalApproval?: boolean;
@@ -28,10 +33,29 @@ export type RelayMessage = {
   createdAt: string;
 };
 
-export type DesktopPollResponse = {
+export type DevicePullResponse = {
   ok: true;
   deviceId: string;
   messages: RelayMessage[];
+  lastSeq: number;
+  serverTime?: string;
+};
+
+/** @deprecated Use DevicePullResponse. */
+export type DesktopPollResponse = DevicePullResponse;
+
+export type DevicePushResponse = {
+  ok: true;
+  message: RelayMessage;
 };
 
 export type ApprovalDecision = "approved" | "denied";
+
+/** Canais de IPC sugeridos para o app Electron da YAMI. */
+export type IpcEnvelope =
+  | { channel: "yami:chat:inbound"; message: RelayMessage }
+  | { channel: "yami:forage:inbound"; message: RelayMessage }
+  | { channel: "yami:config:inbound"; message: RelayMessage }
+  | { channel: "yami:approval:needed"; message: RelayMessage }
+  | { channel: "yami:status:inbound"; message: RelayMessage }
+  | { channel: "yami:event:inbound"; message: RelayMessage };

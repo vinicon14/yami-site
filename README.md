@@ -23,8 +23,8 @@ backend.
   for R$ 20,00. O processamento é idempotente. Se `MP_WEBHOOK_SECRET`
   existir, a assinatura `x-signature` também é exigida (opcional).
 - **Painel remoto** — a pessoa abre este site em outro PC, entra na conta
-  e usa a YAMI de casa por um relé de saída. Veja `docs/RELAY.md` e
-  `desktop-client/`.
+  e usa a YAMI de casa por um relé de saída em Postgres (o mesmo Neon).
+  Veja `docs/RELAY.md` e `desktop-client/INTEGRATION.md`.
 - **Instalador** — URL privada em `YAMI_INSTALLER_URL`. O servidor baixa e
   entrega; o navegador nunca vê o endereço direto.
 
@@ -58,8 +58,9 @@ Tudo está documentado em `.env.example`. Em produção são obrigatórios:
 3. **Postgres** com faixa gratuita (Neon ou o Supabase que você já usa),
    sem cartão se possível. Sem isso, pedidos não sobrevivem a um restart.
 4. **Instalador** hospedado de forma privada, em `YAMI_INSTALLER_URL`.
-5. **Relé** do painel: ver opções e custos em `docs/RELAY.md`. Escolha
-   uma; nenhuma conta é criada daqui.
+5. **Relé** do painel: `RELAY_PROVIDER=postgres` no mesmo Neon, já
+   implementado. Nada de conta extra. Integração do app:
+   `desktop-client/INTEGRATION.md`.
 6. Textos de `/termos` e `/privacidade` estão marcados como rascunho.
 7. Capturas reais da YAMI no lugar dos espaços reservados.
 8. (Opcional) Cadastrar o webhook no painel do Mercado Pago e colocar
@@ -77,6 +78,8 @@ https://<domínio>/api/mp/webhook
 ```bash
 npm test
 npm run build
+# prova de ponta a ponta do relé em produção (conta e aparelho de teste, depois apaga):
+# DATABASE_URL=... SITE_URL=https://yami-site-pi.vercel.app node scripts/fake-device.mjs
 ```
 
 Cobre assinatura (quando há segredo), expiração do link de download,

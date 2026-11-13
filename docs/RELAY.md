@@ -3,41 +3,47 @@
 O painel no navegador fala com a YAMI do PC de casa por um relé. A
 conexão é de saída: o aplicativo inicia, ninguém abre porta no computador.
 
+## Implementação atual: Postgres (`RELAY_PROVIDER=postgres`)
+
+As filas ficam na tabela `remote_messages` do Neon já ligado ao projeto
+(mesmo `DATABASE_URL`). Não há conta nova, nem Ably, nem Pusher, nem
+servidor extra.
+
+- Direção `down`: painel → PC. Direção `up`: PC → painel.
+- `seq` monotônico por aparelho. O cliente envia `afterSeq`.
+- Long-poll até 25 s (`waitMs`) ou coleta curta (1–2 s, `waitMs=0`).
+- O aparelho está **ligado** se `devices.last_seen_at` tem menos de 30 s
+  (atualizado a cada pull/push do token).
+- Mensagens expiram em 7 dias (limpeza no próprio relé).
+- Teto de 64 KiB, licença paga, token revogável, rate limit, `audit_log`.
+- Arquivo e comando exigem aprovação no PC de casa.
+
+Rotas canônicas:
+
+- `GET /api/relay/device/pull` e `POST /api/relay/device/push` — token do aparelho.
+- `GET /api/relay/painel/pull` e `POST /api/relay/painel/push` — sessão da pessoa.
+
+`/api/relay/desktop` e `/api/relay/browser` continuam como apelido.
+
+O módulo do aplicativo e a especificação de IPC estão em
+`desktop-client/INTEGRATION.md`.
+
 ## Por que não é um WebSocket na Vercel
 
-Funções serverless da Vercel não mantêm conexões longas. O protocolo
-implementado hoje é coleta periódica (HTTP GET a cada 2–3 s) sobre a
-interface `RelayAdapter` (`lib/relay`).
+Funções serverless da Vercel não mantêm conexões longas. O protocolo é
+HTTP com long-poll (até ~25 s, `maxDuration` 30) sobre a interface
+`RelayAdapter` (`lib/relay`).
 
-## Implementação atual: memória
+## Outros provedores (não usados)
 
-`RELAY_PROVIDER=memory` (padrão). Filas em processo. Serve para
-desenvolvimento e para demonstrar o painel. Em produção na Vercel, cada
-instância tem a própria memória: um pedido feito numa função pode não ser
-visto por outra, e o estado “online” se perde no cold start.
-
-Antes de oferecer o painel remoto de verdade, troque por um dos caminhos
-abaixo. Este repositório **não cria contas** nesses serviços e **não
-contrata** nada.
-
-## Opções gerenciadas (não contratadas)
-
-Estimativas de 2026, para decisão — confira o preço atual no site de cada
-um antes de pagar.
-
-| Opção | Uso | Faixa de preço | Observação |
-| --- | --- | --- | --- |
-| **Ably** | Pub/sub com presença | Faixa gratuita (~6 milhões de mensagens/mês); depois cerca de US$ 29/mês | Encaixa bem em “PC online / offline”. |
-| **Pusher Channels** | Idem | Faixa gratuita limitada (~200 mil mensagens/dia); depois cerca de US$ 49/mês | Similar ao Ably. |
-| **Fly.io** (processo pequeno com WebSocket) | Servidor próprio do relé | Costuma começar em torno de US$ 3–5/mês para uma máquina pequena | Controle total; você opera o processo. |
-| **Railway** | Idem | Faixa similar, às vezes com crédito inicial | Mesma ideia: um serviço Node com WebSocket. |
-
-A interface `RelayAdapter` (`lib/relay/types.ts`) é o ponto de encaixe.
-`getRelay()` hoje avisa e cai na memória se `ably` ou `pusher` forem
-pedidos sem o adaptador implementado.
+`RELAY_PROVIDER=memory` serve só neste processo (desenvolvimento local).
+Na Vercel a memória não atravessa instâncias, e o painel não abre nesse
+modo. `ably` e `pusher` têm a interface, mas **não estão implementados**
+e **não devem ser contratados** daqui — o Postgres já resolve.
 
 ## O que o aplicativo precisa fazer
 
-Veja `desktop-client/SPEC.md`. Resumo: parear com código na tela,
-guardar o `deviceToken`, coletar `/api/relay/desktop`, e **aprovar no
-próprio PC** qualquer ação de arquivo ou comando.
+Veja `desktop-client/INTEGRATION.md`. Resumo: parear com código na tela,
+guardar o `deviceToken`, coletar `/api/relay/device/pull`, enviar em
+`/api/relay/device/push`, e **aprovar no próprio PC** qualquer ação de
+arquivo ou comando.
