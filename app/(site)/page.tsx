@@ -32,12 +32,12 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <article>
-        <header className="border-b border-line">
+        <header className="site-grid border-b border-line">
           <div className="mx-auto max-w-6xl px-5 pb-14 pt-12 md:px-8 md:pb-20 md:pt-16">
             <p className="kicker">
               Ferramenta principal do i-Tools · {PRODUCT.platform}
             </p>
-            <h1 className="mt-5 max-w-3xl font-serif text-4xl font-medium leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
+            <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
               YAMI — seu agente de IA
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
@@ -50,7 +50,7 @@ export default function HomePage() {
               <BuyButton />
               <Link
                 href="/painel"
-                className="border border-line px-4 py-2 text-sm hover:border-ink"
+                className="btn-ghost"
               >
                 Ver o painel remoto
               </Link>
@@ -66,18 +66,21 @@ export default function HomePage() {
             title={`YAMI ${version}`}
             caption="Espaço reservado para uma captura real da YAMI. O desenho abaixo é um esquema da interface, não uma fotografia."
           >
-            <div className="grid min-h-56 grid-cols-[7rem_1fr] md:grid-cols-[11rem_1fr]">
-              <div className="border-r border-white/10 p-3 font-mono text-[10px] leading-6 text-white/40">
-                <p>Conversas</p>
+            <div className="grid min-h-64 grid-cols-[7.5rem_1fr] md:grid-cols-[14rem_1fr]">
+              <div className="border-r border-line bg-canvas p-3 text-[12px] leading-7 text-muted">
+                <p className="text-accent-text font-medium">Conversas</p>
                 <p>Forage</p>
                 <p>Configurações</p>
-                <p className="mt-6">Reunião</p>
-                <p>Artigo</p>
+                <p className="mt-6 text-[10px] uppercase tracking-wider text-muted/80">Recentes</p>
+                <p className="rounded-lg bg-surface-raised px-2 text-ink-soft">Reunião</p>
+                <p className="px-2">Artigo</p>
               </div>
-              <div className="flex flex-col justify-end gap-2 p-4">
-                <div className="ml-auto h-8 w-2/5 rounded-sm bg-white/10" />
-                <div className="h-12 w-3/5 rounded-sm bg-white/15" />
-                <div className="mt-2 h-8 w-full rounded-sm border border-white/15" />
+              <div className="flex flex-col justify-end gap-2 bg-canvas p-4">
+                <div className="chat-bubble chat-bubble-user w-2/5">Agendar a publicação</div>
+                <div className="chat-bubble chat-bubble-assistant w-3/5">
+                  Posso deixar isso com o Forage no seu PC. A aprovação continua aí.
+                </div>
+                <div className="mt-2 h-10 w-full rounded-[22px] border border-line bg-surface" />
               </div>
             </div>
           </ScreenshotFrame>
@@ -91,7 +94,7 @@ export default function HomePage() {
           <div className="grid gap-12 md:grid-cols-3">
             <div>
               <p className="kicker">01 — No seu PC</p>
-              <h2 id="o-que-e-title" className="mt-3 font-serif text-2xl font-medium leading-tight">
+              <h2 id="o-que-e-title" className="mt-3 text-2xl font-semibold leading-tight">
                 Local, no seu Windows
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -102,7 +105,7 @@ export default function HomePage() {
             </div>
             <div>
               <p className="kicker">02 — Forage</p>
-              <h2 className="mt-3 font-serif text-2xl font-medium leading-tight">
+              <h2 className="mt-3 text-2xl font-semibold leading-tight">
                 Cria e publica conteúdo
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -113,7 +116,7 @@ export default function HomePage() {
             </div>
             <div>
               <p className="kicker">03 — De outro PC</p>
-              <h2 className="mt-3 font-serif text-2xl font-medium leading-tight">
+              <h2 className="mt-3 text-2xl font-semibold leading-tight">
                 A mesma tela, no navegador
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -126,11 +129,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="border-t border-line bg-paper-2">
+        <section className="border-t border-line bg-surface">
           <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-14 md:flex-row md:items-end md:justify-between md:px-8">
             <div>
               <p className="kicker">Preço</p>
-              <h2 className="mt-3 font-serif text-3xl font-medium tracking-tight">
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight">
                 {price}, uma vez.
               </h2>
               <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">
@@ -143,7 +146,7 @@ export default function HomePage() {
               <BuyButton />
               <Link
                 href="/precos"
-                className="border border-line px-4 py-2 text-sm hover:border-ink"
+                className="btn-ghost"
               >
                 Ver o que está incluso
               </Link>
@@ -155,7 +158,7 @@ export default function HomePage() {
           <p className="kicker">Também no i-Tools</p>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
             A YAMI é a ferramenta principal do{" "}
-            <a href={itools} className="text-rust underline underline-offset-2">
+            <a href={itools} className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
               i-Tools
             </a>
             . As outras ferramentas do i-Tools continuam gratuitas. A compra, a

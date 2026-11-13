@@ -16,7 +16,7 @@ export default async function EntrarPage({
   return (
     <article className="mx-auto max-w-md px-5 py-12 md:px-8 md:py-16">
       <p className="kicker">Conta</p>
-      <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight">
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight">
         Entrar na YAMI
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">

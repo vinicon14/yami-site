@@ -26,7 +26,7 @@ export default async function ContaPage() {
   return (
     <article className="mx-auto max-w-2xl px-5 py-12 md:px-8 md:py-16">
       <p className="kicker">Conta</p>
-      <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight">
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight">
         Olá{current.user.name ? `, ${current.user.name}` : ""}
       </h1>
       <p className="mt-2 text-sm text-muted">{current.user.email}</p>

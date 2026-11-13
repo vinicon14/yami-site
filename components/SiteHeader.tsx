@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BuyButton } from "./BuyButton";
+import { YamiWordmark } from "./YamiWordmark";
 
 const links = [
   { href: "/#o-que-e", label: "O que é" },
@@ -11,37 +12,31 @@ const links = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-paper/92 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-canvas/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 md:px-8">
-        <Link
-          href="/"
-          className="font-serif text-xl tracking-tight text-ink"
-          aria-label="YAMI, página inicial"
-        >
-          YAMI
-        </Link>
+        <YamiWordmark />
 
-        <nav className="hidden items-center gap-6 text-[0.92rem] text-ink-soft md:flex">
+        <nav className="hidden items-center gap-6 text-[0.92rem] text-muted md:flex">
           {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className="hover:text-ink underline-offset-4 hover:underline"
+              className="hover:text-ink transition-colors"
             >
               {l.label}
             </Link>
           ))}
-          <Link href="/entrar" className="hover:text-ink underline-offset-4 hover:underline">
+          <Link href="/entrar" className="hover:text-ink transition-colors">
             Entrar
           </Link>
           <BuyButton />
         </nav>
 
         <details className="relative md:hidden">
-          <summary className="cursor-pointer list-none text-sm text-ink-soft after:content-none">
+          <summary className="cursor-pointer list-none text-sm text-muted after:content-none">
             Menu
           </summary>
-          <div className="absolute right-0 mt-2 w-52 border border-line bg-paper p-3 shadow-sm">
+          <div className="absolute right-0 mt-2 w-52 rounded-[14px] border border-line bg-surface p-3 shadow-[0_12px_32px_rgba(0,0,0,0.48)]">
             <nav className="flex flex-col gap-2 text-sm">
               {links.map((l) => (
                 <Link key={l.href} href={l.href} className="py-1">

@@ -334,22 +334,21 @@ export function PainelApp({
     forageOn === true ? "ligado no PC" : forageOn === false ? "pausado no PC" : "status ainda não chegou";
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-white/10 px-4 py-2">
+    <div className="flex min-h-screen flex-col bg-canvas text-ink">
+      <header className="flex items-center justify-between border-b border-line bg-frame/80 px-4 py-2 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <Link href="/" className="font-serif text-lg tracking-tight text-[#ece7db]">
-            YAMI
+          <Link href="/" className="inline-flex items-center gap-2 text-ink" aria-label="YAMI, página inicial">
+            <img src="/yami-logo.svg" alt="" width={22} height={22} style={{ borderRadius: "20%" }} />
+            <span className="text-[1.05rem] font-semibold tracking-tight">YAMI</span>
           </Link>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[#9a9384]">
-            Painel remoto
-          </span>
+          <span className="kicker">Painel remoto</span>
         </div>
-        <div className="flex items-center gap-3 font-mono text-[11px]">
+        <div className="flex items-center gap-3 text-[11px]">
           <span
-            className={`inline-block h-1.5 w-1.5 rounded-full ${online ? "bg-[#7d9a78]" : "bg-[#9a6a4a]"}`}
+            className={`inline-block h-1.5 w-1.5 rounded-full ${online ? "bg-success" : "bg-warning"}`}
             aria-hidden
           />
-          <span className="text-[#9a9384]">
+          <span className="text-muted">
             {selected
               ? online
                 ? `${selected.name} ligado`
@@ -357,45 +356,49 @@ export function PainelApp({
               : "nenhum PC pareado"}
             {selected?.lastSeenAt ? ` · visto ${formatSeen(selected.lastSeenAt)}` : ""}
           </span>
-          <Link href="/conta" className="text-[#ece7db]/70 hover:text-[#ece7db]">
+          <Link href="/conta" className="text-ink-soft hover:text-ink">
             {user.email}
           </Link>
         </div>
       </header>
 
       {!online && (
-        <div className="border-b border-[#6f4a32] bg-[#2a1c14] px-4 py-2 text-sm text-[#e8d0c0]" role="status">
+        <div className="border-b border-warning/40 bg-[rgba(255,148,18,0.12)] px-4 py-2 text-sm text-warning" role="status">
           {selected
             ? "O PC de casa está desligado ou a YAMI não está aberta (sem sinal há mais de 30 s). Pedidos ficam na fila até ela voltar."
             : "Pareie o aplicativo da YAMI no seu PC de casa para usar este painel. O código aparece no próprio programa."}
         </div>
       )}
       {queued && online === false && (
-        <div className="border-b border-white/10 bg-[#1c1a17] px-4 py-2 text-sm text-[#c4a484]" role="status">
+        <div className="border-b border-line bg-surface px-4 py-2 text-sm text-accent-text" role="status">
           Mensagem na fila: será entregue quando o PC voltar a coletar.
         </div>
       )}
       {error && (
-        <div className="border-b border-white/10 bg-[#1c1a17] px-4 py-2 text-sm text-[#e8d0c0]" role="alert">
+        <div className="border-b border-danger/40 bg-[rgba(253,47,59,0.16)] px-4 py-2 text-sm text-danger" role="alert">
           {error}
         </div>
       )}
 
       <div className="flex min-h-0 flex-1">
-        <aside className="w-44 shrink-0 border-r border-white/10 bg-[#1c1a17] p-3 font-mono text-[11px] leading-7 text-[#9a9384] md:w-52">
+        <aside className="w-44 shrink-0 border-r border-line bg-canvas p-3 text-[13px] leading-7 text-muted md:w-[16.5rem]">
           {(["conversas", "forage", "config"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`block w-full text-left ${tab === t ? "text-[#ece7db]" : "hover:text-[#ece7db]/80"}`}
+              className={`block w-full rounded-lg px-2 text-left ${
+                tab === t
+                  ? "bg-surface-raised font-medium text-accent-text"
+                  : "hover:bg-control-hover hover:text-ink"
+              }`}
             >
               {t === "conversas" ? "Conversas" : t === "forage" ? "Forage" : "Configurações"}
             </button>
           ))}
-          <p className="mt-8 text-[10px] uppercase tracking-wider">Dispositivos</p>
+          <p className="mt-8 px-2 text-[10px] uppercase tracking-wider text-muted">Dispositivos</p>
           {devices.filter((d) => !d.revoked).length === 0 && (
-            <p className="mt-1 leading-5">Nenhum PC pareado.</p>
+            <p className="mt-1 px-2 leading-5">Nenhum PC pareado.</p>
           )}
           {devices
             .filter((d) => !d.revoked)
@@ -404,15 +407,17 @@ export function PainelApp({
                 key={d.id}
                 type="button"
                 onClick={() => setDeviceId(d.id)}
-                className={`block w-full truncate text-left ${deviceId === d.id ? "text-[#ece7db]" : ""}`}
+                className={`block w-full truncate rounded-lg px-2 text-left ${
+                  deviceId === d.id ? "bg-surface-raised text-ink" : "hover:text-ink"
+                }`}
               >
-                {d.online ? "● " : "○ "}
+                <span className={d.online ? "text-success" : "text-muted"}>{d.online ? "● " : "○ "}</span>
                 {d.name}
               </button>
             ))}
         </aside>
 
-        <section className="flex min-w-0 flex-1 flex-col">
+        <section className="flex min-w-0 flex-1 flex-col bg-canvas">
           {tab === "conversas" && (
             <>
               <div className="flex-1 space-y-3 overflow-y-auto p-5">
@@ -421,10 +426,12 @@ export function PainelApp({
                     key={m.id}
                     className={
                       m.role === "user"
-                        ? "ml-auto max-w-[75%] bg-white/10 px-3 py-2 text-sm"
+                        ? "chat-bubble chat-bubble-user"
                         : m.pendingApproval
-                          ? "max-w-[85%] border border-[#6f4a32] bg-[#2a1c14] px-3 py-2 text-sm text-[#e8d0c0]"
-                          : "max-w-[75%] bg-white/[0.06] px-3 py-2 text-sm"
+                          ? "chat-bubble max-w-[85%] border border-warning/40 bg-[rgba(255,148,18,0.12)] text-warning"
+                          : m.role === "system"
+                            ? "chat-bubble max-w-[85%] bg-surface text-muted"
+                            : "chat-bubble chat-bubble-assistant"
                     }
                   >
                     {m.text}
@@ -432,18 +439,15 @@ export function PainelApp({
                 ))}
                 <div ref={bottom} />
               </div>
-              <form onSubmit={onChat} className="border-t border-white/10 p-4">
+              <form onSubmit={onChat} className="border-t border-line p-4">
                 <div className="flex gap-2">
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={online ? "Escreva para a YAMI…" : "A mensagem vai para a fila até o PC voltar"}
-                    className="flex-1 border border-white/15 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-[#9a9384]"
+                    className="field flex-1 rounded-[22px] px-4"
                   />
-                  <button
-                    type="submit"
-                    className="border border-[#ece7db]/80 px-4 py-2 text-sm hover:bg-white/10"
-                  >
+                  <button type="submit" className="btn-primary">
                     Enviar
                   </button>
                 </div>
@@ -453,25 +457,23 @@ export function PainelApp({
 
           {tab === "forage" && (
             <div className="flex-1 p-6">
-              <h1 className="font-serif text-2xl">Forage</h1>
-              <p className="mt-2 max-w-lg text-sm leading-relaxed text-[#9a9384]">
+              <h1 className="text-2xl font-semibold">Forage</h1>
+              <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted">
                 Ligar ou pausar o Forage manda o pedido para o aplicativo no seu PC.
                 O status e o registro ao vivo vêm de lá, depois da execução.
               </p>
-              <p className="mt-4 font-mono text-xs uppercase tracking-wider text-[#c4a484]">
+              <p className="mt-4 text-xs uppercase tracking-wider text-accent-text">
                 Status: {forageLabel}
               </p>
               <button
                 type="button"
                 onClick={() => void toggleForage()}
-                className="mt-6 border border-[#ece7db]/80 px-4 py-2 text-sm hover:bg-white/10"
+                className="btn-primary mt-6"
               >
                 {forageOn === true ? "Pausar o Forage" : "Ligar o Forage"}
               </button>
-              <p className="mt-8 font-mono text-[10px] uppercase tracking-wider text-[#9a9384]">
-                Registro ao vivo
-              </p>
-              <ul className="mt-2 space-y-1 font-mono text-xs text-[#9a9384]">
+              <p className="kicker mt-8">Registro ao vivo</p>
+              <ul className="mt-2 space-y-1 font-mono text-xs text-muted">
                 {forageLog.length === 0 && <li>Nenhuma atividade recebida do PC ainda.</li>}
                 {forageLog.map((line, i) => (
                   <li key={i}>{line}</li>
@@ -482,14 +484,14 @@ export function PainelApp({
 
           {tab === "config" && (
             <div className="flex-1 p-6">
-              <h1 className="font-serif text-2xl">Configurações</h1>
-              <p className="mt-2 max-w-lg text-sm leading-relaxed text-[#9a9384]">
+              <h1 className="text-2xl font-semibold">Configurações</h1>
+              <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted">
                 As configurações da YAMI ficam no PC de casa. Aqui você pareia ou
                 desconecta aparelhos. Mudanças de modelo e contas continuam no aplicativo.
               </p>
               <form onSubmit={confirmPair} className="mt-6 flex flex-wrap items-end gap-3">
                 <div>
-                  <label htmlFor="pair-code" className="block font-mono text-[10px] uppercase tracking-wider text-[#9a9384]">
+                  <label htmlFor="pair-code" className="kicker">
                     Código do aplicativo
                   </label>
                   <input
@@ -497,15 +499,15 @@ export function PainelApp({
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
                     maxLength={8}
-                    className="mt-1 w-40 border border-white/15 bg-transparent px-3 py-2 font-mono tracking-widest"
+                    className="field mt-1 w-40 font-mono tracking-widest"
                   />
                 </div>
-                <button type="submit" className="border border-[#ece7db]/80 px-4 py-2 text-sm hover:bg-white/10">
+                <button type="submit" className="btn-primary">
                   Parear
                 </button>
               </form>
               <p className="mt-8 text-sm">
-                <Link href="/conta" className="underline underline-offset-2">
+                <Link href="/conta" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
                   Gerenciar dispositivos e licença na conta
                 </Link>
               </p>

@@ -13,7 +13,7 @@ export default function TermosPage() {
   return (
     <article className="mx-auto max-w-2xl px-5 py-12 md:px-8 md:py-16">
       <p className="draft-banner">Rascunho, revisar antes de publicar.</p>
-      <h1 className="font-serif text-4xl font-medium tracking-tight">Termos de uso da YAMI</h1>
+      <h1 className="text-4xl font-semibold tracking-tight">Termos de uso da YAMI</h1>
       <p className="mt-4 text-sm text-muted">
         Última atualização deste rascunho: 12 de novembro de 2026.
       </p>

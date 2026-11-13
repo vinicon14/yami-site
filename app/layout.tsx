@@ -1,28 +1,13 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import localFont from "next/font/local";
 import { PRODUCT } from "@/lib/config";
 import "./globals.css";
 
-const serif = Newsreader({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-newsreader",
+const outfit = localFont({
+  src: "./fonts/outfit-latin-wght-normal.woff2",
+  variable: "--font-outfit",
   display: "swap",
-  style: ["normal", "italic"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const sans = IBM_Plex_Sans({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-ibm-sans",
-  display: "swap",
-  weight: ["400", "500", "600"],
-});
-
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  variable: "--font-ibm-mono",
-  display: "swap",
-  weight: ["400", "500"],
+  weight: "100 900",
 });
 
 const title = "YAMI — seu agente de IA para Windows";
@@ -48,16 +33,19 @@ export const metadata: Metadata = {
     description,
   },
   robots: { index: true, follow: true },
-  icons: { icon: "/favicon.svg" },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-512.png", sizes: "512x512", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="pt-BR"
-      className={`${serif.variable} ${sans.variable} ${mono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-paper text-ink font-sans">
+    <html lang="pt-BR" className={`${outfit.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-canvas text-ink font-sans">
         {children}
       </body>
     </html>

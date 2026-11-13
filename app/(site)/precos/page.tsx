@@ -17,15 +17,15 @@ export default function PrecosPage() {
   return (
     <article className="mx-auto max-w-2xl px-5 py-12 md:px-8 md:py-16">
       <p className="kicker">Preço</p>
-      <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight">Uma licença, um pagamento.</h1>
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight">Uma licença, um pagamento.</h1>
       <p className="mt-4 text-lg text-muted">
         Sem assinatura e sem plano escondido. Você paga uma vez, baixa o instalador e usa a
         YAMI no seu Windows.
       </p>
 
-      <div className="mt-10 border border-line bg-paper-2 p-8">
+      <div className="card mt-10 p-8">
         <p className="kicker">YAMI {PRODUCT.version}</p>
-        <p className="mt-3 font-serif text-5xl tracking-tight">{price}</p>
+        <p className="mt-3 text-5xl font-semibold tracking-tight">{price}</p>
         <p className="mt-2 text-sm text-muted">pagamento único, em real</p>
         <ul className="mt-6 space-y-2 text-sm leading-relaxed">
           <li>Instalador para Windows 10 ou 11 de 64 bits</li>

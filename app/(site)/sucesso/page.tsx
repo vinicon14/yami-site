@@ -33,7 +33,7 @@ export default async function SucessoPage({
     return (
       <article className="mx-auto max-w-xl px-5 py-12 md:px-8 md:py-16">
         <p className="kicker">Pagamento</p>
-        <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight">
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
           {result.pending ? "Aguardando confirmação" : "Não foi possível liberar"}
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-muted">{result.error}.</p>
@@ -43,7 +43,7 @@ export default async function SucessoPage({
           escreva para nós com o e-mail da compra.
         </p>
         <p className="mt-8 text-sm">
-          <Link href="/checkout" className="text-rust underline underline-offset-2">
+          <Link href="/checkout" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
             Voltar ao checkout
           </Link>
         </p>
@@ -57,19 +57,19 @@ export default async function SucessoPage({
   return (
     <article className="mx-auto max-w-xl px-5 py-12 md:px-8 md:py-16">
       <p className="kicker">Pagamento aprovado</p>
-      <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight">
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight">
         Sua YAMI está pronta
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">
         Guarde a chave de licença. O link de download vale 24 horas e tem um
         limite de usos. Depois, dá para emitir outro pela{" "}
-        <Link href="/conta" className="text-rust underline underline-offset-2">
+        <Link href="/conta" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
           sua conta
         </Link>
         , com o mesmo e-mail da compra.
       </p>
 
-      <div className="mt-8 border border-line bg-paper-2 p-5">
+      <div className="card mt-8 p-5">
         <p className="kicker">Chave de licença</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <code className="font-mono text-sm tracking-wide">{result.license.key}</code>
@@ -84,7 +84,7 @@ export default async function SucessoPage({
           expiresAt={result.expiresAt}
         />
       ) : (
-        <p className="mt-6 border border-line bg-paper-2 px-4 py-3 text-sm">
+        <p className="card mt-6 px-4 py-3 text-sm">
           O limite de downloads deste pedido foi atingido, ou o instalador ainda
           não foi publicado neste ambiente. Sua licença está reservada. Entre na
           conta ou tente mais tarde.
@@ -96,7 +96,7 @@ export default async function SucessoPage({
         e parear o painel remoto.
       </p>
       <p className="mt-3 text-sm">
-        <Link href="/entrar" className="text-rust underline underline-offset-2">
+        <Link href="/entrar" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Criar conta ou entrar
         </Link>
       </p>

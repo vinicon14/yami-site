@@ -24,29 +24,29 @@ export default async function CheckoutPage({
   return (
     <article className="mx-auto max-w-xl px-5 py-12 md:px-8 md:py-16">
       <p className="kicker">Checkout</p>
-      <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight">Comprar a YAMI</h1>
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight">Comprar a YAMI</h1>
       <p className="mt-4 text-muted">
         {price}, pagamento único. {ACCEPTED_PAYMENT_COPY}
       </p>
 
       {search.status === "falhou" && (
-        <p className="mt-6 border border-line bg-paper-2 px-4 py-3 text-sm" role="alert">
+        <p className="card mt-6 px-4 py-3 text-sm" role="alert">
           O pagamento não foi concluído. Você pode tentar de novo.
         </p>
       )}
       {search.status === "pendente" && (
-        <p className="mt-6 border border-line bg-paper-2 px-4 py-3 text-sm" role="status">
+        <p className="card mt-6 px-4 py-3 text-sm" role="status">
           O pagamento ainda está em processamento. Se você pagou com Pix, aguarde a
           confirmação — a página de sucesso sai quando o Mercado Pago confirmar.
         </p>
       )}
       {search.demo && (
-        <p className="mt-6 border border-line bg-paper-2 px-4 py-3 text-sm" role="status">
+        <p className="card mt-6 px-4 py-3 text-sm" role="status">
           Este ambiente está em modo de teste e não cobra de verdade.
         </p>
       )}
 
-      <div className="mt-8 border border-line bg-paper-2 p-6">
+      <div className="card mt-8 p-6">
         <p className="kicker">Resumo</p>
         <p className="mt-2 font-medium">YAMI {PRODUCT.version} — licença e instalador</p>
         <p className="mt-1 text-sm text-muted">Windows 10/11 x64 · {price}</p>
@@ -66,7 +66,7 @@ export default async function CheckoutPage({
               type="email"
               required
               autoComplete="email"
-              className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm"
+              className="field mt-1"
             />
             <p className="mt-1 text-xs text-muted">
               Usamos este e-mail para a chave de licença e o link de download.
@@ -81,18 +81,18 @@ export default async function CheckoutPage({
               name="name"
               type="text"
               autoComplete="name"
-              className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm"
+              className="field mt-1"
             />
           </div>
           <label className="flex items-start gap-2 text-sm leading-relaxed">
             <input type="checkbox" name="accepted" className="mt-1" required />
             <span>
               Li e aceito os{" "}
-              <Link href="/termos" className="text-rust underline underline-offset-2">
+              <Link href="/termos" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
                 termos da YAMI
               </Link>{" "}
               e a{" "}
-              <Link href="/privacidade" className="text-rust underline underline-offset-2">
+              <Link href="/privacidade" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
                 política de privacidade
               </Link>{" "}
               <span className="text-muted">(rascunhos, sujeitos a revisão)</span>.
@@ -100,7 +100,7 @@ export default async function CheckoutPage({
           </label>
           <button
             type="submit"
-            className="w-full border border-ink bg-ink px-4 py-2.5 text-sm text-paper hover:bg-rust hover:border-rust"
+            className="btn-primary w-full py-2.5"
           >
             Pagar {price} com Mercado Pago
           </button>
@@ -114,7 +114,7 @@ export default async function CheckoutPage({
 
       <p className="mt-8 text-sm text-muted">
         Já comprou?{" "}
-        <Link href="/entrar" className="text-rust underline underline-offset-2">
+        <Link href="/entrar" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Entre na sua conta
         </Link>{" "}
         para ver a licença e o download.

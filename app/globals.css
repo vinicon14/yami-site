@@ -1,23 +1,62 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-ibm-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-serif: var(--font-newsreader), Newsreader, Georgia, "Times New Roman", serif;
-  --font-mono: var(--font-ibm-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: var(--font-outfit), "Outfit", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: var(--font-outfit), "Outfit", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
 
-  --color-paper: #f3efe6;
-  --color-paper-2: #e8e2d3;
-  --color-paper-3: #ddd6c4;
-  --color-ink: #171512;
-  --color-muted: #6a6458;
-  --color-line: #d4cdc0;
-  --color-rust: #8b3a1e;
-  --color-rust-hover: #6f2e18;
-  --color-forest: #1e3d32;
-  --color-forest-2: #2a5646;
-  --color-danger: #8b2e2e;
-  --color-amber: #8a5a12;
-  --color-ink-soft: #2c2924;
+  /* Official YAMI palette (yami/branding/palette.json + tokens.css, dark default) */
+  --color-canvas: #0b1220;
+  --color-frame: #060914;
+  --color-surface: #121a2b;
+  --color-surface-raised: #182236;
+  --color-control: #121a2b;
+  --color-control-hover: #1a2740;
+  --color-control-active: #223250;
+  --color-accent: #22d3ee;
+  --color-accent-hover: #67e8f9;
+  --color-accent-text: #67e8f9;
+  --color-on-accent: #061018;
+  --color-logo: #7c6cff;
+  --color-success: #31cf76;
+  --color-warning: #ff9412;
+  --color-danger: #fd2f3b;
+
+  /* Aliases so existing paper/ink/rust/forest utilities follow the app theme */
+  --color-paper: #0b1220;
+  --color-paper-2: #121a2b;
+  --color-paper-3: #182236;
+  --color-ink: #ffffff;
+  --color-ink-soft: #dcdcdc;
+  --color-muted: #8b97b0;
+  --color-line: #2a3650;
+  --color-rust: #22d3ee;
+  --color-rust-hover: #67e8f9;
+  --color-forest: #060914;
+  --color-forest-2: #121a2b;
+  --color-amber: #ff9412;
+  --color-ink-soft-alt: #dcdcdc;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-card: 14px;
+  --radius-xl: 20px;
+  --radius-bubble: 22px;
+  --radius-pill: 999px;
+}
+
+:root {
+  color-scheme: dark;
+  --yami-glass: rgba(18, 26, 43, 0.76);
+  --yami-glass-border: rgba(255, 255, 255, 0.18);
+  --yami-hero-grid: rgba(124, 108, 255, 0.12);
+  --yami-accent-soft: rgba(34, 211, 238, 0.16);
+  --yami-warning-soft: rgba(255, 148, 18, 0.12);
+  --yami-danger-soft: rgba(253, 47, 59, 0.16);
+  --yami-success-soft: rgba(49, 207, 118, 0.12);
+  --yami-ease: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 html {
@@ -26,29 +65,30 @@ html {
 
 html,
 body {
-  background: var(--color-paper);
+  background: var(--color-canvas);
   color: var(--color-ink);
 }
 
 body {
   font-family: var(--font-sans);
-  font-feature-settings: "ss01" on, "kern" on;
-  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
 }
 
 ::selection {
-  background: var(--color-ink);
-  color: var(--color-paper);
+  background: var(--yami-accent-soft);
+  color: var(--color-ink);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-rust);
+  outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 
 .kicker {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.6875rem;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-muted);
@@ -63,8 +103,8 @@ body {
 }
 
 .prose-yami h2 {
-  font-family: var(--font-serif);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: 1.75rem;
   letter-spacing: -0.02em;
   margin-top: 2.5rem;
@@ -72,8 +112,8 @@ body {
 }
 
 .prose-yami h3 {
-  font-family: var(--font-serif);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: 1.25rem;
   margin-top: 1.75rem;
   margin-bottom: 0.5rem;
@@ -89,27 +129,30 @@ body {
 }
 
 .prose-yami a {
-  color: var(--color-rust);
+  color: var(--color-accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .draft-banner {
-  border: 1px solid var(--color-paper-3);
-  background: var(--color-paper-2);
-  color: var(--color-amber);
-  font-family: var(--font-mono);
+  border: 1px solid rgba(255, 148, 18, 0.35);
+  background: var(--yami-warning-soft);
+  color: var(--color-warning);
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   padding: 0.55rem 0.8rem;
   margin-bottom: 1.75rem;
+  border-radius: var(--radius-lg);
 }
 
 .window-chrome {
-  background: #1c1a17;
-  color: #ece7db;
-  border: 1px solid #2a2722;
-  box-shadow: 0 18px 40px -24px rgba(23, 21, 18, 0.7);
+  background: var(--color-frame);
+  color: var(--color-ink);
+  border: 1px solid var(--yami-glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.48);
+  overflow: hidden;
 }
 
 .window-dots {
@@ -121,25 +164,119 @@ body {
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 99px;
-  background: #4a453c;
+  background: #2a3650;
+}
+
+.window-dots span:nth-child(1) {
+  background: #fd2f3b;
+}
+.window-dots span:nth-child(2) {
+  background: #ff9412;
+}
+.window-dots span:nth-child(3) {
+  background: #31cf76;
 }
 
 .placeholder-stamp {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #9a9384;
+  color: var(--color-muted);
 }
 
 .site-grid {
-  background-image: linear-gradient(to right, rgba(212, 205, 192, 0.45) 1px, transparent 1px);
-  background-size: 8rem 100%;
-  background-position: center;
+  background-color: var(--color-canvas);
+  background-image:
+    linear-gradient(to right, var(--yami-hero-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--yami-hero-grid) 1px, transparent 1px);
+  background-size: 4rem 4rem;
 }
 
-@media (max-width: 700px) {
-  .site-grid {
-    background-size: 4rem 100%;
-  }
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: 1px solid transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 180ms var(--yami-ease), color 180ms var(--yami-ease);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.btn-primary:disabled,
+.btn-primary[aria-disabled="true"] {
+  opacity: 0.48;
+  cursor: default;
+  pointer-events: none;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 180ms var(--yami-ease), border-color 180ms var(--yami-ease);
+}
+
+.btn-ghost:hover {
+  background: var(--color-control-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.field {
+  width: 100%;
+  border: 1px solid var(--color-line);
+  background: var(--color-control);
+  color: var(--color-ink);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.field:focus,
+.field:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--yami-accent-soft);
+}
+
+.card {
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+}
+
+.chat-bubble {
+  border-radius: var(--radius-bubble);
+  padding: 0.55rem 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.chat-bubble-user {
+  margin-left: auto;
+  max-width: 75%;
+  background: var(--yami-accent-soft);
+  color: var(--color-ink);
+}
+
+.chat-bubble-assistant {
+  max-width: 75%;
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
 }

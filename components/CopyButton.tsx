@@ -25,7 +25,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={copy}
-      className="border border-line px-2.5 py-1 font-mono text-xs text-ink-soft hover:border-ink hover:text-ink"
+      className="btn-ghost px-2.5 py-1 font-mono text-xs"
     >
       {done ? "Copiado" : label}
     </button>

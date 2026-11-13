@@ -45,14 +45,14 @@ export function AuthForm({ next = "/conta" }: { next?: string }) {
         <button
           type="button"
           onClick={() => setMode("login")}
-          className={mode === "login" ? "underline underline-offset-4" : "text-muted"}
+          className={mode === "login" ? "text-ink font-medium underline underline-offset-4 decoration-accent" : "text-muted hover:text-ink"}
         >
           Entrar
         </button>
         <button
           type="button"
           onClick={() => setMode("register")}
-          className={mode === "register" ? "underline underline-offset-4" : "text-muted"}
+          className={mode === "register" ? "text-ink font-medium underline underline-offset-4 decoration-accent" : "text-muted hover:text-ink"}
         >
           Criar conta
         </button>
@@ -68,7 +68,7 @@ export function AuthForm({ next = "/conta" }: { next?: string }) {
               name="name"
               type="text"
               autoComplete="name"
-              className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm"
+              className="field mt-1"
             />
           </div>
         )}
@@ -82,7 +82,7 @@ export function AuthForm({ next = "/conta" }: { next?: string }) {
             type="email"
             required
             autoComplete="email"
-            className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm"
+            className="field mt-1"
           />
         </div>
         <div>
@@ -96,21 +96,21 @@ export function AuthForm({ next = "/conta" }: { next?: string }) {
             required
             minLength={8}
             autoComplete={mode === "login" ? "current-password" : "new-password"}
-            className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm"
+            className="field mt-1"
           />
           {mode === "register" && (
             <p className="mt-1 text-xs text-muted">Pelo menos 8 caracteres.</p>
           )}
         </div>
         {error && (
-          <p className="border border-line bg-paper-2 px-3 py-2 text-sm text-danger" role="alert">
+          <p className="rounded-lg border border-danger/40 bg-[rgba(253,47,59,0.16)] px-3 py-2 text-sm text-danger" role="alert">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={pending}
-          className="w-full border border-ink bg-ink px-4 py-2.5 text-sm text-paper hover:bg-rust hover:border-rust disabled:opacity-60"
+          className="btn-primary w-full py-2.5 disabled:opacity-60"
         >
           {pending ? "Aguarde…" : mode === "login" ? "Entrar" : "Criar conta"}
         </button>

@@ -51,7 +51,7 @@ export default function FaqPage() {
   return (
     <article className="mx-auto max-w-2xl px-5 py-12 md:px-8 md:py-16">
       <p className="kicker">Perguntas</p>
-      <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight">Perguntas frequentes</h1>
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight">Perguntas frequentes</h1>
       <dl className="mt-10 space-y-8">
         {items.map((item) => (
           <div key={item.q}>
@@ -61,11 +61,11 @@ export default function FaqPage() {
         ))}
       </dl>
       <p className="mt-12 text-sm">
-        <Link href="/requisitos" className="text-rust underline underline-offset-2">
+        <Link href="/requisitos" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Ver requisitos
         </Link>
         {" · "}
-        <Link href="/termos" className="text-rust underline underline-offset-2">
+        <Link href="/termos" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Termos
         </Link>
       </p>

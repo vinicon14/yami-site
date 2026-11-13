@@ -106,13 +106,13 @@ export function AccountPanel({
   return (
     <div className="mt-10 space-y-12">
       {msg && (
-        <p className="border border-line bg-paper-2 px-4 py-3 text-sm" role="status">
+        <p className="card px-4 py-3 text-sm" role="status">
           {msg}
         </p>
       )}
 
       <section>
-        <h2 className="font-serif text-2xl font-medium">Licenças</h2>
+        <h2 className="text-2xl font-semibold">Licenças</h2>
         {licenses.length === 0 ? (
           <div className="mt-4">
             <LicenseRequired />
@@ -120,7 +120,7 @@ export function AccountPanel({
         ) : (
           <ul className="mt-4 space-y-4">
             {licenses.map((l) => (
-              <li key={l.id} className="border border-line p-4">
+              <li key={l.id} className="card p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <code className="font-mono text-sm tracking-wide">{l.key}</code>
                   <CopyButton value={l.key} />
@@ -128,7 +128,7 @@ export function AccountPanel({
                 <button
                   type="button"
                   onClick={() => newLink(l.orderId)}
-                  className="mt-3 border border-line px-3 py-1.5 text-sm hover:border-ink"
+                  className="btn-ghost mt-3 px-3 py-1.5"
                 >
                   Emitir link de download
                 </button>
@@ -141,7 +141,7 @@ export function AccountPanel({
             <li>
               <a
                 href={`/api/download?token=${downloadToken}&file=setup`}
-                className="text-rust underline underline-offset-2"
+                className="text-accent-text underline underline-offset-2 hover:text-accent-hover"
               >
                 Baixar instalador Windows
               </a>
@@ -149,7 +149,7 @@ export function AccountPanel({
             <li>
               <a
                 href={`/api/download?token=${downloadToken}&file=portable`}
-                className="text-rust underline underline-offset-2"
+                className="text-accent-text underline underline-offset-2 hover:text-accent-hover"
               >
                 Baixar Windows portátil
               </a>
@@ -158,7 +158,7 @@ export function AccountPanel({
               {apkReady ? (
                 <a
                   href={`/api/download?token=${downloadToken}&file=apk`}
-                  className="text-rust underline underline-offset-2"
+                  className="text-accent-text underline underline-offset-2 hover:text-accent-hover"
                 >
                   Baixar aplicativo Android (APK)
                 </a>
@@ -180,7 +180,7 @@ export function AccountPanel({
       </section>
 
       <section>
-        <h2 className="font-serif text-2xl font-medium">Pedidos</h2>
+        <h2 className="text-2xl font-semibold">Pedidos</h2>
         {orders.length === 0 ? (
           <p className="mt-3 text-sm text-muted">Nenhum pedido neste e-mail.</p>
         ) : (
@@ -199,7 +199,7 @@ export function AccountPanel({
       </section>
 
       <section>
-        <h2 className="font-serif text-2xl font-medium">Computadores pareados</h2>
+        <h2 className="text-2xl font-semibold">Computadores pareados</h2>
         <p className="mt-2 text-sm text-muted">
           No aplicativo da YAMI, peça um código de pareamento e digite-o aqui.
         </p>
@@ -218,7 +218,7 @@ export function AccountPanel({
               id="code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="mt-1 w-36 border border-line bg-paper px-3 py-2 font-mono text-sm tracking-widest"
+              className="field mt-1 w-36 font-mono tracking-widest"
               maxLength={8}
               autoComplete="off"
             />
@@ -231,16 +231,16 @@ export function AccountPanel({
               id="deviceName"
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
-              className="mt-1 w-44 border border-line bg-paper px-3 py-2 text-sm"
+              className="field mt-1 w-44"
             />
           </div>
-          <button type="submit" className="border border-ink bg-ink px-3 py-2 text-sm text-paper hover:bg-rust hover:border-rust">
+          <button type="submit" className="btn-primary">
             Parear
           </button>
         </form>
         <ul className="mt-6 space-y-3">
           {devices.map((d) => (
-            <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 border border-line p-3 text-sm">
+            <li key={d.id} className="card flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
               <div>
                 <p className="font-medium">{d.name}</p>
                 <p className="text-xs text-muted">
@@ -254,7 +254,7 @@ export function AccountPanel({
                 <button
                   type="button"
                   onClick={() => revoke(d.id)}
-                  className="border border-line px-3 py-1.5 text-xs hover:border-ink"
+                  className="btn-ghost px-3 py-1.5 text-xs"
                 >
                   Desconectar
                 </button>
@@ -263,14 +263,14 @@ export function AccountPanel({
           ))}
         </ul>
         <p className="mt-4 text-sm">
-          <Link href="/painel" className="text-rust underline underline-offset-2">
+          <Link href="/painel" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
             Abrir o painel remoto
           </Link>
         </p>
       </section>
 
       <section>
-        <h2 className="font-serif text-2xl font-medium">Registro de acesso</h2>
+        <h2 className="text-2xl font-semibold">Registro de acesso</h2>
         {audit.length === 0 ? (
           <p className="mt-3 text-sm text-muted">Nenhuma ação registrada ainda.</p>
         ) : (
@@ -289,7 +289,7 @@ export function AccountPanel({
       <button
         type="button"
         onClick={() => void logout()}
-        className="border border-line px-4 py-2 text-sm hover:border-ink"
+        className="btn-ghost"
       >
         Sair
       </button>

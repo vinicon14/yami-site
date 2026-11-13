@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="YAMI">
+  <title>YAMI</title>
+  <desc>Original YAMI mark: a rounded square with two inward chevrons. Designed for the YAMI personal fork; not a copy of the OpenBot scribble-eye mark.</desc>
+  <rect width="240" height="240" rx="50" ry="50" fill="#7c6cff"/>
+  <polyline fill="none" stroke="#061018" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" points="52 100 78 118 52 136"/>
+  <polyline fill="none" stroke="#061018" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" points="188 100 162 118 188 136"/>
+</svg>

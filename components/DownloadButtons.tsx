@@ -10,7 +10,7 @@ export function DownloadButtons({
   expiresAt?: string;
 }) {
   return (
-    <div className="mt-6 border border-line p-5">
+    <div className="card mt-6 p-5">
       <p className="kicker">Downloads</p>
       {expiresAt ? (
         <p className="mt-2 text-sm text-muted">
@@ -43,14 +43,14 @@ function FileRow({
   if (!file) {
     if (kind === "apk") {
       return (
-        <li className="border border-line bg-paper-2 px-4 py-3 text-sm">
+        <li className="card bg-surface-raised px-4 py-3 text-sm">
           <span className="font-medium">Aplicativo Android (APK)</span>
           <span className="mt-1 block text-muted">APK em breve</span>
         </li>
       );
     }
     return (
-      <li className="border border-line bg-paper-2 px-4 py-3 text-sm text-muted">
+      <li className="card bg-surface-raised px-4 py-3 text-sm text-muted">
         {kind === "setup" ? "Instalador Windows" : "Windows portátil"} ainda não
         publicado.
       </li>
@@ -58,7 +58,7 @@ function FileRow({
   }
   const href = `/api/download?token=${encodeURIComponent(token)}&file=${kind}`;
   return (
-    <li className="border border-line px-4 py-3">
+    <li className="card px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium">{file.label}</p>
@@ -69,10 +69,7 @@ function FileRow({
             SHA256 {file.sha256}
           </p>
         </div>
-        <a
-          href={href}
-          className="inline-flex border border-ink bg-ink px-4 py-2 text-sm text-paper hover:bg-rust hover:border-rust"
-        >
+        <a href={href} className="btn-primary">
           Baixar
         </a>
       </div>
