@@ -140,3 +140,38 @@ export async function fetchPayment(
 /** Tipos de pagamento que o Checkout Pro desta loja aceita (Pix + cartão). */
 export const ACCEPTED_PAYMENT_COPY =
   "Pix ou cartão de crédito e débito, pelo Mercado Pago.";
+
+/** Aviso no checkout: o MP recusa quando o comprador é a mesma conta da loja. */
+export const SAME_COLLECTOR_WARNING =
+  "Não use a mesma conta Mercado Pago da loja — o Mercado Pago recusa esse pagamento. Entre com outra conta, ou abra uma janela anônima, e pague com Pix ou cartão.";
+
+export function checkoutInitPoint(preferenceId: string): string {
+  return `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${encodeURIComponent(preferenceId)}`;
+}
+
+type ReusableOrder = {
+  status: string;
+  amountBrl: number;
+  mpPreferenceId: string | null;
+  createdAt: string;
+};
+
+/** Reaproveita um pedido pendente recente com preferência já criada (evita clique duplo). */
+export function reusablePendingOrder<T extends ReusableOrder>(
+  orders: T[],
+  opts: { amountBrl: number; maxAgeMs?: number; now?: number },
+): T | null {
+  const maxAgeMs = opts.maxAgeMs ?? 7 * 24 * 60 * 60 * 1000;
+  const now = opts.now ?? Date.now();
+  const matches = orders
+    .filter(
+      (o) =>
+        o.status === "pending" &&
+        Boolean(o.mpPreferenceId) &&
+        o.amountBrl === opts.amountBrl &&
+        now - new Date(o.createdAt).getTime() >= 0 &&
+        now - new Date(o.createdAt).getTime() <= maxAgeMs,
+    )
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return matches[0] ?? null;
+}

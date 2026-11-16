@@ -9,7 +9,12 @@ import {
   PRODUCT,
 } from "@/lib/config";
 import { getStore } from "@/lib/db";
-import { buildPreferencePayload, createPreference } from "@/lib/mp-checkout";
+import {
+  buildPreferencePayload,
+  checkoutInitPoint,
+  createPreference,
+  reusablePendingOrder,
+} from "@/lib/mp-checkout";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -69,6 +74,14 @@ export async function POST(req: Request) {
 
     const price = getPriceBrl();
     const store = await getStore();
+    const reusable = reusablePendingOrder(await store.getOrdersByEmail(email), {
+      amountBrl: price,
+    });
+    if (reusable?.mpPreferenceId) {
+      return NextResponse.redirect(checkoutInitPoint(reusable.mpPreferenceId), {
+        status: 303,
+      });
+    }
     const order = await store.createOrder({
       id: crypto.randomUUID(),
       email,
