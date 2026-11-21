@@ -1,31 +1,40 @@
 {
   "produto": "YAMI OS",
   "canal": "estavel",
-  "versao": "0.6.0",
-  "build": "r6",
+  "versao": "0.7.0",
+  "build": "r7",
   "data": "2026-11-20",
   "notas": [
-    "Instalar YAMI OS em outro disco do PC (lado a lado, sem formatar) com entrada no menu de boot",
-    "Ícones em pixel art (tema YAMI-Pixel) no menu, área de trabalho e barra",
-    "ISO completa publicada em partes (<2 GB) com sha256; o app Atualizações baixa, confere e junta",
-    "Mantém tudo da 0.5.0 (instalador de AppImage, Grok Bot, atualização sem perder dados)"
+    "Loja: todos os apps com ícone em pixel art fiel à logo original",
+    "Loja: Grok Bot, Atualizações YAMI OS, Instalar AppImage, Instalar YAMI OS e OpenCode (com status Instalado · Abrir)",
+    "OpenCode 2.3.2 oficial pré-instalado (app desktop + terminal), sem credenciais",
+    "Atualização rápida por pacote (~470 KB) para quem está na 0.6.0; seus dados são mantidos"
   ],
-  "pacotes": [],
+  "pacotes": [
+    {
+      "versao": "0.7.0",
+      "deVersaoMinima": "0.6.0",
+      "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.7.0/yami-os-0.7.0-pacote.tar.zst",
+      "sha256": "c9fdc6fa6a0e1616d494295ffcb6e23d6a5f7df60eb8949298284cc8cb3138fd",
+      "tamanho": 477365,
+      "descricao": "Loja nova + ícones pixel art + OpenCode (baixado da release oficial, sha256 conferido)"
+    }
+  ],
   "iso": {
     "url": null,
-    "sha256": "e3e4fae76d308d33c46ed13cca7a6ff34cffb2723aa2a12e92d17d1a06245ca2",
-    "tamanho": 3108372480,
+    "sha256": "ab8ee0bcd7ec59692f36beeeee34b9ee33380938603b55426af1b3946473e5b9",
+    "tamanho": 3523215360,
     "kernel": "6.8.0-149-generic",
     "partes": [
       {
-        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.6.0/yami-os-0.6.0-r6.iso.parte01",
-        "sha256": "1057e215eafee4c468bf2dd6b9ff7542f6d0ae89c098e97b2c160638b9374c21",
+        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.7.0/yami-os-0.7.0-r7.iso.parte01",
+        "sha256": "4a97b1d22607889684a2cc6fa211aa1a760ebc8e25d27818deaf02103be93bd9",
         "tamanho": 1992294400
       },
       {
-        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.6.0/yami-os-0.6.0-r6.iso.parte02",
-        "sha256": "3fad6cf4f900b67e5dad0f71997730fc7ac4543ed644b45cd5af26a0a46a8bcf",
-        "tamanho": 1116078080
+        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.7.0/yami-os-0.7.0-r7.iso.parte02",
+        "sha256": "27937825e056f277701a633c8f0d4a2c2d675f48f2819a2e4c236a5b41b1ab81",
+        "tamanho": 1530920960
       }
     ],
     "observacao": "ISO em 2 partes; baixe todas, confira o sha256 de cada uma e junte (cat parte01 parte02 ... > yami-os-amd64.iso)."
