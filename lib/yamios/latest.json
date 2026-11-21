@@ -1,22 +1,34 @@
 {
   "produto": "YAMI OS",
   "canal": "estavel",
-  "versao": "0.5.0",
-  "build": "r5",
+  "versao": "0.6.0",
+  "build": "r6",
   "data": "2026-11-20",
   "notas": [
-    "Instalar AppImage: duplo clique em qualquer .AppImage instala no menu (e desinstala)",
-    "Grok Bot pré-instalado (app oficial para Linux)",
-    "App Atualizações YAMI OS (Vercel + GitHub)",
-    "Atualização sem perder dados salvos"
+    "Instalar YAMI OS em outro disco do PC (lado a lado, sem formatar) com entrada no menu de boot",
+    "Ícones em pixel art (tema YAMI-Pixel) no menu, área de trabalho e barra",
+    "ISO completa publicada em partes (<2 GB) com sha256; o app Atualizações baixa, confere e junta",
+    "Mantém tudo da 0.5.0 (instalador de AppImage, Grok Bot, atualização sem perder dados)"
   ],
   "pacotes": [],
   "iso": {
     "url": null,
-    "sha256": "d55098e8d21045a094f2f1653ec2baa5cddec3a96289750b3e6c40815d257f4f",
-    "tamanho": 3114467328,
+    "sha256": "e3e4fae76d308d33c46ed13cca7a6ff34cffb2723aa2a12e92d17d1a06245ca2",
+    "tamanho": 3108372480,
     "kernel": "6.8.0-149-generic",
-    "observacao": "ISO completa não publicada (3,1 GB, acima do limite de 2 GB por arquivo do GitHub)."
+    "partes": [
+      {
+        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.6.0/yami-os-0.6.0-r6.iso.parte01",
+        "sha256": "1057e215eafee4c468bf2dd6b9ff7542f6d0ae89c098e97b2c160638b9374c21",
+        "tamanho": 1992294400
+      },
+      {
+        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.6.0/yami-os-0.6.0-r6.iso.parte02",
+        "sha256": "3fad6cf4f900b67e5dad0f71997730fc7ac4543ed644b45cd5af26a0a46a8bcf",
+        "tamanho": 1116078080
+      }
+    ],
+    "observacao": "ISO em 2 partes; baixe todas, confira o sha256 de cada uma e junte (cat parte01 parte02 ... > yami-os-amd64.iso)."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",
