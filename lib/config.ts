@@ -38,15 +38,21 @@ export function hasMpAccessToken(): boolean {
   return readEnv("MP_ACCESS_TOKEN").length > 0;
 }
 
-/** Checkout Pro real só entra com MP_MODE=production e token configurado. */
+/** Checkout Pro real só entra com MP_MODE=production, token e segredo do webhook. */
 export function chargesEnabled(): boolean {
-  return getMpMode() === "production" && hasMpAccessToken();
+  return (
+    getMpMode() === "production" &&
+    hasMpAccessToken() &&
+    getWebhookSecret().length > 0
+  );
 }
 
 /**
- * A venda abre quando a cobrança real está ligada (token de produção).
- * O webhook é autenticado buscando o pagamento na API do Mercado Pago;
- * MP_WEBHOOK_SECRET é opcional (valida x-signature se estiver presente).
+ * Em produção a venda só abre com token de acesso e MP_WEBHOOK_SECRET
+ * configurados; sem eles a cobrança real permanece desligada.
+ * No processador do webhook o pagamento é autenticado na API do Mercado Pago
+ * e, quando MP_WEBHOOK_SECRET está definido, a assinatura x-signature também
+ * é validada.
  */
 export function salesOpen(): boolean {
   return chargesEnabled();

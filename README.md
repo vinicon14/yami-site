@@ -20,8 +20,9 @@ backend.
   `notification_url=https://<domínio>/api/mp/webhook`. O webhook **não
   confia no corpo**: busca `GET /v1/payments/{id}` com o access token e só
   libera se `status=approved`, `external_reference` for o pedido e o valor
-  for R$ 20,00. O processamento é idempotente. Se `MP_WEBHOOK_SECRET`
-  existir, a assinatura `x-signature` também é exigida (opcional).
+  for R$ 20,00. O processamento é idempotente.
+   Em produção, `MP_WEBHOOK_SECRET` é obrigatório para abrir a venda;
+   no webhook, quando definido, ele também valida a assinatura `x-signature`.
 - **Painel remoto** — a pessoa abre este site em outro PC, entra na conta
   e usa a YAMI de casa por um relé de saída em Postgres (o mesmo Neon).
   Veja `docs/RELAY.md` e `desktop-client/INTEGRATION.md`.
@@ -38,14 +39,15 @@ npm test
 npm run dev
 ```
 
-Abra http://localhost:3000. Com `MP_MODE=production` e o token no
-ambiente, o checkout cria uma preferência real. Não use isso para pagar de
-teste na sua própria conta a menos que queira uma cobrança de verdade.
+Abra http://localhost:3000. Com `MP_MODE=production`, `MP_ACCESS_TOKEN` e
+`MP_WEBHOOK_SECRET` no ambiente, o checkout cria uma preferência real. Não use
+isso para pagar de teste na sua própria conta a menos que queira uma cobrança
+de verdade.
 
 ## Variáveis
 
 Tudo está documentado em `.env.example`. Em produção são obrigatórios:
-`MP_ACCESS_TOKEN`, `MP_MODE=production`, `PRICE_BRL=20`,
+`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `MP_MODE=production`, `PRICE_BRL=20`,
 `SESSION_SECRET`, `DOWNLOAD_TOKEN_SECRET`, `SITE_URL` (ou
 `NEXT_PUBLIC_SITE_URL`), e `DATABASE_URL` antes de vender de fato.
 `YAMI_INSTALLER_URL` é necessário para o arquivo sair no download.
@@ -63,9 +65,11 @@ Tudo está documentado em `.env.example`. Em produção são obrigatórios:
    `desktop-client/INTEGRATION.md`.
 6. Textos de `/termos` e `/privacidade` estão marcados como rascunho.
 7. Capturas reais da YAMI no lugar dos espaços reservados.
-8. (Opcional) Cadastrar o webhook no painel do Mercado Pago e colocar
-   `MP_WEBHOOK_SECRET`. Não é necessário: a `notification_url` vai em
-   cada preferência, e a confirmação é a consulta autenticada do pagamento.
+8. Cadastrar o webhook no painel do Mercado Pago e configurar
+   `MP_WEBHOOK_SECRET`: em produção a venda só abre com ele (junto com
+   `MP_ACCESS_TOKEN`). A `notification_url` já vai em cada preferência e a
+   confirmação é a consulta autenticada do pagamento; o segredo também habilita
+   a validação da assinatura `x-signature` no webhook.
 
 URL do webhook, quando o site estiver no ar:
 
