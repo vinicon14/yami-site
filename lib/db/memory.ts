@@ -336,7 +336,118 @@ export function createMemoryStore(): Store {
         : null;
     },
 
+    async markPaidOnce({ orderId, paymentId, paidAt }) {
+      const order = orders.get(orderId);
+      if (!order) return null;
+      if (order.mpPaymentId && order.mpPaymentId !== paymentId) return null;
+      const changed = !order.mpPaymentId;
+      if (changed) {
+        order.status = "paid";
+        order.mpPaymentId = paymentId;
+        order.paidAt = nowIso(paidAt ?? new Date());
+      }
+      return { order: { ...order }, changed };
+    },
+
+    async addPaymentEvent(entry) {
+      paymentEvents.push({ ...entry, createdAt: entry.createdAt ?? nowIso() });
+    },
+
+    async createFeatureRequest(input) {
+      const now = nowIso();
+      const request: import("./types").FeatureRequest = {
+        ...input,
+        id: crypto.randomUUID(),
+        status: "pendente",
+        publishedVersion: null,
+        adminNote: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      featureRequests.set(request.id, request);
+      return { ...request };
+    },
+
+    async listFeatureRequests(userId) {
+      return [...featureRequests.values()]
+        .filter((r) => !userId || r.userId === userId)
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .map((r) => ({ ...r }));
+    },
+
+    async getFeatureRequest(id) {
+      const r = featureRequests.get(id);
+      return r ? { ...r } : null;
+    },
+
+    async updateFeatureRequest(input) {
+      const r = featureRequests.get(input.id);
+      if (!r || r.userId !== input.userId || r.status !== "pendente") return null;
+      r.title = input.title;
+      r.description = input.description;
+      r.category = input.category;
+      r.updatedAt = nowIso();
+      featureRequests.set(r.id, r);
+      return { ...r };
+    },
+
+    async transitionFeatureRequest(input) {
+      const r = featureRequests.get(input.id);
+      if (!r) return null;
+      const from = r.status;
+      r.status = input.toStatus;
+      r.updatedAt = nowIso();
+      if (input.publishedVersion !== undefined) r.publishedVersion = input.publishedVersion;
+      if (input.note !== undefined && input.note !== null) r.adminNote = input.note;
+      requestEvents.push({
+        id: crypto.randomUUID(),
+        requestId: r.id,
+        fromStatus: from,
+        toStatus: input.toStatus,
+        actorUserId: input.actorUserId,
+        actorRole: input.actorRole,
+        note: input.note ?? null,
+        createdAt: nowIso(),
+      });
+      featureRequests.set(r.id, r);
+      return { ...r };
+    },
+
+    async createUserNotification(input) {
+      const n: import("./types").UserNotification = {
+        ...input,
+        id: crypto.randomUUID(),
+        readAt: null,
+        createdAt: input.createdAt ?? nowIso(),
+      };
+      notifications.push(n);
+      return { ...n };
+    },
+
+    async listUserNotifications(userId, limit = 30) {
+      return notifications
+        .filter((n) => n.userId === userId)
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .slice(0, limit)
+        .map((n) => ({ ...n }));
+    },
+
+    async markNotificationRead(id, userId) {
+      const n = notifications.find((item) => item.id === id && item.userId === userId);
+      if (!n || n.readAt) return false;
+      n.readAt = nowIso();
+      return true;
+    },
+
+    async countUnreadNotifications(userId) {
+      return notifications.filter((n) => n.userId === userId && !n.readAt).length;
+    },
   };
+
+  const featureRequests = new Map<string, import("./types").FeatureRequest>();
+  const requestEvents: import("./types").FeatureRequestEvent[] = [];
+  const notifications: import("./types").UserNotification[] = [];
+  const paymentEvents: import("./types").PaymentEvent[] = [];
 
   return store;
 }

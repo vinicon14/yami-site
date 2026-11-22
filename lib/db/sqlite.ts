@@ -7,12 +7,14 @@ import {
   SCHEMA_SQL,
   rowToAudit,
   rowToDevice,
+  rowToFeatureRequest,
   rowToLicense,
   rowToOrder,
   rowToPairing,
   rowToSession,
   rowToToken,
   rowToUser,
+  rowToUserNotification,
   rowToHistory,
 } from "./sql-shared";
 import type {
@@ -449,6 +451,122 @@ function wrap(db: DatabaseSync): Store {
         .prepare(`SELECT * FROM release_history WHERE id = ?`)
         .get(id) as Record<string, unknown> | undefined;
       return row ? rowToHistory(row) : null;
+    },
+
+    async markPaidOnce({ orderId, paymentId, paidAt }) {
+      const current = await this.getOrderById(orderId);
+      if (!current) return null;
+      if (current.mpPaymentId && current.mpPaymentId !== paymentId) return null;
+      const changed = !current.mpPaymentId;
+      if (changed) {
+        const result = db.prepare(
+          "UPDATE orders SET status = 'paid', mp_payment_id = ?, paid_at = ? WHERE id = ? AND mp_payment_id IS NULL",
+        ).run(paymentId, nowIso(paidAt ?? new Date()), orderId);
+        if (result.changes === 0) return null;
+      }
+      const order = await this.getOrderById(orderId);
+      return order ? { order, changed } : null;
+    },
+
+    async addPaymentEvent(entry) {
+      db.prepare(
+        `INSERT INTO payment_events (id, order_id, payment_id, event_type, result, reason_code, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        entry.id, entry.orderId, entry.paymentId, entry.eventType,
+        entry.result, entry.reasonCode, entry.createdAt ?? nowIso(),
+      );
+    },
+
+    async createFeatureRequest(input) {
+      const now = nowIso();
+      const id = crypto.randomUUID();
+      db.prepare(
+        `INSERT INTO feature_requests
+          (id, user_id, title, description, category, status, published_version, admin_note, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'pendente', NULL, NULL, ?, ?)`,
+      ).run(id, input.userId, input.title, input.description, input.category, now, now);
+      return (await this.getFeatureRequest(id))!;
+    },
+
+    async listFeatureRequests(userId) {
+      const rows = userId
+        ? db.prepare("SELECT * FROM feature_requests WHERE user_id = ? ORDER BY created_at DESC").all(userId)
+        : db.prepare("SELECT * FROM feature_requests ORDER BY created_at DESC").all();
+      return (rows as Record<string, unknown>[]).map(rowToFeatureRequest);
+    },
+
+    async getFeatureRequest(id) {
+      const row = db.prepare("SELECT * FROM feature_requests WHERE id = ?").get(id);
+      return row ? rowToFeatureRequest(row as Record<string, unknown>) : null;
+    },
+
+    async updateFeatureRequest(input) {
+      const current = await this.getFeatureRequest(input.id);
+      if (!current || current.userId !== input.userId || current.status !== "pendente") return null;
+      db.prepare(
+        "UPDATE feature_requests SET title = ?, description = ?, category = ?, updated_at = ? WHERE id = ?",
+      ).run(input.title, input.description, input.category, nowIso(), input.id);
+      return this.getFeatureRequest(input.id);
+    },
+
+    async transitionFeatureRequest(input) {
+      const current = await this.getFeatureRequest(input.id);
+      if (!current) return null;
+      const now = nowIso();
+      const publishedVersion =
+        input.publishedVersion === undefined ? current.publishedVersion : input.publishedVersion;
+      db.prepare(
+        `UPDATE feature_requests SET status = ?, published_version = ?, admin_note = ?, updated_at = ? WHERE id = ?`,
+      ).run(
+        input.toStatus,
+        publishedVersion,
+        input.note ?? current.adminNote,
+        now,
+        input.id,
+      );
+      db.prepare(
+        `INSERT INTO feature_request_events
+          (id, request_id, from_status, to_status, actor_user_id, actor_role, note, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        crypto.randomUUID(), input.id, current.status, input.toStatus,
+        input.actorUserId, input.actorRole, input.note ?? null, now,
+      );
+      return this.getFeatureRequest(input.id);
+    },
+
+    async createUserNotification(input) {
+      const id = crypto.randomUUID();
+      const createdAt = input.createdAt ?? nowIso();
+      db.prepare(
+        `INSERT INTO user_notifications
+          (id, user_id, kind, title, body, request_id, read_at, created_at, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
+      ).run(id, input.userId, input.kind, input.title, input.body, input.requestId, createdAt, input.expiresAt);
+      const row = db.prepare("SELECT * FROM user_notifications WHERE id = ?").get(id);
+      return rowToUserNotification(row as Record<string, unknown>);
+    },
+
+    async listUserNotifications(userId, limit = 30) {
+      const rows = db.prepare(
+        "SELECT * FROM user_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+      ).all(userId, limit);
+      return (rows as Record<string, unknown>[]).map(rowToUserNotification);
+    },
+
+    async markNotificationRead(id, userId) {
+      const result = db.prepare(
+        "UPDATE user_notifications SET read_at = ? WHERE id = ? AND user_id = ? AND read_at IS NULL",
+      ).run(nowIso(), id, userId);
+      return result.changes > 0;
+    },
+
+    async countUnreadNotifications(userId) {
+      const row = db.prepare(
+        "SELECT COUNT(*) AS n FROM user_notifications WHERE user_id = ? AND read_at IS NULL",
+      ).get(userId) as { n: number };
+      return Number(row.n);
     },
   };
 }

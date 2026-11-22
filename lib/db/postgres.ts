@@ -6,12 +6,14 @@ import {
   SCHEMA_SQL,
   rowToAudit,
   rowToDevice,
+  rowToFeatureRequest,
   rowToLicense,
   rowToOrder,
   rowToPairing,
   rowToSession,
   rowToToken,
   rowToUser,
+  rowToUserNotification,
   rowToHistory,
 } from "./sql-shared";
 
@@ -374,6 +376,117 @@ function wrap(sql: Sql): Store {
       const rows = await sql`SELECT * FROM release_history WHERE id = ${id}`;
       const row = one(rows);
       return row ? rowToHistory(row as Record<string, unknown>) : null;
+    },
+
+    async markPaidOnce({ orderId, paymentId, paidAt }) {
+      const current = await this.getOrderById(orderId);
+      if (!current) return null;
+      if (current.mpPaymentId && current.mpPaymentId !== paymentId) return null;
+      const changed = !current.mpPaymentId;
+      if (changed) {
+        const rows = await sql`
+          UPDATE orders SET status = 'paid', mp_payment_id = ${paymentId}, paid_at = ${nowIso(paidAt ?? new Date())}
+          WHERE id = ${orderId} AND mp_payment_id IS NULL
+          RETURNING id
+        `;
+        if (rows.length === 0) return null;
+      }
+      const order = await this.getOrderById(orderId);
+      return order ? { order, changed } : null;
+    },
+
+    async addPaymentEvent(entry) {
+      await sql`
+        INSERT INTO payment_events (id, order_id, payment_id, event_type, result, reason_code, created_at)
+        VALUES (${entry.id}, ${entry.orderId}, ${entry.paymentId}, ${entry.eventType}, ${entry.result}, ${entry.reasonCode}, ${entry.createdAt ?? nowIso()})
+      `;
+    },
+
+    async createFeatureRequest(input) {
+      const now = nowIso();
+      const id = crypto.randomUUID();
+      await sql`
+        INSERT INTO feature_requests
+          (id, user_id, title, description, category, status, published_version, admin_note, created_at, updated_at)
+        VALUES (${id}, ${input.userId}, ${input.title}, ${input.description}, ${input.category}, 'pendente', NULL, NULL, ${now}, ${now})
+      `;
+      return (await this.getFeatureRequest(id))!;
+    },
+
+    async listFeatureRequests(userId) {
+      const rows = userId
+        ? await sql`SELECT * FROM feature_requests WHERE user_id = ${userId} ORDER BY created_at DESC`
+        : await sql`SELECT * FROM feature_requests ORDER BY created_at DESC`;
+      return rows.map((r) => rowToFeatureRequest(r as Record<string, unknown>));
+    },
+
+    async getFeatureRequest(id) {
+      const rows = await sql`SELECT * FROM feature_requests WHERE id = ${id}`;
+      const row = one(rows);
+      return row ? rowToFeatureRequest(row) : null;
+    },
+
+    async updateFeatureRequest(input) {
+      const current = await this.getFeatureRequest(input.id);
+      if (!current || current.userId !== input.userId || current.status !== "pendente") return null;
+      await sql`
+        UPDATE feature_requests SET title = ${input.title}, description = ${input.description},
+          category = ${input.category}, updated_at = ${nowIso()} WHERE id = ${input.id}
+      `;
+      return this.getFeatureRequest(input.id);
+    },
+
+    async transitionFeatureRequest(input) {
+      const current = await this.getFeatureRequest(input.id);
+      if (!current) return null;
+      const now = nowIso();
+      const publishedVersion =
+        input.publishedVersion === undefined ? current.publishedVersion : input.publishedVersion;
+      await sql`
+        UPDATE feature_requests SET status = ${input.toStatus},
+          published_version = ${publishedVersion},
+          admin_note = ${input.note ?? current.adminNote}, updated_at = ${now}
+        WHERE id = ${input.id}
+      `;
+      await sql`
+        INSERT INTO feature_request_events
+          (id, request_id, from_status, to_status, actor_user_id, actor_role, note, created_at)
+        VALUES (${crypto.randomUUID()}, ${input.id}, ${current.status}, ${input.toStatus},
+                ${input.actorUserId}, ${input.actorRole}, ${input.note ?? null}, ${now})
+      `;
+      return this.getFeatureRequest(input.id);
+    },
+
+    async createUserNotification(input) {
+      const id = crypto.randomUUID();
+      const createdAt = input.createdAt ?? nowIso();
+      await sql`
+        INSERT INTO user_notifications
+          (id, user_id, kind, title, body, request_id, read_at, created_at, expires_at)
+        VALUES (${id}, ${input.userId}, ${input.kind}, ${input.title}, ${input.body},
+                ${input.requestId}, NULL, ${createdAt}, ${input.expiresAt})
+      `;
+      const rows = await sql`SELECT * FROM user_notifications WHERE id = ${id}`;
+      return rowToUserNotification(one(rows)!);
+    },
+
+    async listUserNotifications(userId, limit = 30) {
+      const rows = await sql`SELECT * FROM user_notifications WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}`;
+      return rows.map((r) => rowToUserNotification(r as Record<string, unknown>));
+    },
+
+    async markNotificationRead(id, userId) {
+      const rows = await sql`
+        UPDATE user_notifications SET read_at = ${nowIso()}
+        WHERE id = ${id} AND user_id = ${userId} AND read_at IS NULL
+        RETURNING id
+      `;
+      return rows.length > 0;
+    },
+
+    async countUnreadNotifications(userId) {
+      const rows = await sql`SELECT COUNT(*)::int AS n FROM user_notifications WHERE user_id = ${userId} AND read_at IS NULL`;
+      return Number((one(rows) as { n: number } | null)?.n ?? 0);
     },
   };
 }
