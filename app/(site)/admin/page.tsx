@@ -5,6 +5,7 @@ import { getStore } from "@/lib/db";
 import { getCurrentManifest } from "@/lib/release-store";
 import { toPublicManifest } from "@/lib/release";
 import { AdminPanel } from "@/components/admin/AdminPanel";
+import { AdminRequestsPanel } from "@/components/admin/AdminRequestsPanel";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -25,12 +26,16 @@ export default async function AdminPage() {
   const store = await getStore();
   const manifest = await getCurrentManifest(store);
   const history = await store.listReleaseHistory(undefined, 40);
+  const requests = await store.listFeatureRequests();
 
   return (
-    <AdminPanel
-      email={current.user.email}
-      manifest={manifest ? toPublicManifest(manifest) : null}
-      history={history.map(publicHistoryItem)}
-    />
+    <>
+      <AdminPanel
+        email={current.user.email}
+        manifest={manifest ? toPublicManifest(manifest) : null}
+        history={history.map(publicHistoryItem)}
+      />
+      <AdminRequestsPanel items={requests} />
+    </>
   );
 }

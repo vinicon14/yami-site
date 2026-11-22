@@ -1,4 +1,19 @@
-import { FEATURE_REQUEST_STATUSES, type FeatureRequestStatus, type Store } from "./db/types";
+import { FEATURE_REQUEST_STATUSES, type FeatureRequest, type FeatureRequestStatus, type Store } from "./db/types";
+
+export type PublicFeatureRequest = Omit<FeatureRequest, "userId" | "adminNote">;
+
+export function toPublicFeatureRequest(item: FeatureRequest): PublicFeatureRequest {
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    category: item.category,
+    status: item.status,
+    publishedVersion: item.publishedVersion,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  };
+}
 
 export const ADMIN_TRANSITIONS = new Set<FeatureRequestStatus>([
   "aprovada",

@@ -1,6 +1,8 @@
 import { getSessionUser } from "@/lib/auth";
 import { getStore } from "@/lib/db";
+import { toPublicFeatureRequest } from "@/lib/feature-requests";
 import { AccountPanel } from "@/components/AccountPanel";
+import { FeatureRequestsPanel } from "@/components/FeatureRequestsPanel";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -22,6 +24,7 @@ export default async function ContaPage() {
   const orders = await store.getOrdersByEmail(current.user.email);
   const devices = await store.listDevices(current.user.id);
   const audit = await store.listAudit(current.user.id, 20);
+  const requests = await store.listFeatureRequests(current.user.id);
 
   return (
     <article className="mx-auto max-w-2xl px-5 py-12 md:px-8 md:py-16">
@@ -58,6 +61,7 @@ export default async function ContaPage() {
           meta: a.meta,
         }))}
       />
+      <FeatureRequestsPanel items={requests.map(toPublicFeatureRequest)} />
     </article>
   );
 }
