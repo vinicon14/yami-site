@@ -86,6 +86,9 @@ CREATE TABLE IF NOT EXISTS pairings (
   device_id TEXT,
   device_name TEXT,
   pending_device_token TEXT,
+  confirm_token_hash TEXT,
+  email_sent_at TEXT,
+  confirmed_at TEXT,
   expires_at TEXT NOT NULL,
   consumed_at TEXT,
   created_at TEXT NOT NULL
@@ -288,6 +291,10 @@ export function rowToPairing(row: Record<string, unknown>): PairingRow {
     deviceName: row.device_name == null ? null : String(row.device_name),
     pendingDeviceToken:
       row.pending_device_token == null ? null : String(row.pending_device_token),
+    confirmTokenHash:
+      row.confirm_token_hash == null ? null : String(row.confirm_token_hash),
+    emailSentAt: row.email_sent_at == null ? null : String(row.email_sent_at),
+    confirmedAt: row.confirmed_at == null ? null : String(row.confirmed_at),
     expiresAt: String(row.expires_at),
     consumedAt: row.consumed_at == null ? null : String(row.consumed_at),
     createdAt: String(row.created_at),

@@ -75,6 +75,9 @@ export type PairingRow = {
   deviceName: string | null;
   /** Clear device token kept only until the desktop claims it once. */
   pendingDeviceToken: string | null;
+  confirmTokenHash: string | null;
+  emailSentAt: string | null;
+  confirmedAt: string | null;
   expiresAt: string;
   consumedAt: string | null;
   createdAt: string;
