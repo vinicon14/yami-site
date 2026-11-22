@@ -235,15 +235,22 @@ export function createMemoryStore(): Store {
       return null;
     },
 
+    async getPairingByConfirmHash(hash) {
+      for (const p of pairings.values()) {
+        if (p.confirmTokenHash === hash) return { ...p };
+      }
+      return null;
+    },
+
     async confirmPairing(input) {
       const p = pairings.get(input.id);
-      if (!p) throw new Error("pareamento não encontrado");
+      if (!p || p.consumedAt) return false;
       p.userId = input.userId;
       p.deviceId = input.deviceId;
       p.deviceName = input.deviceName;
       p.pendingDeviceToken = input.pendingDeviceToken;
       p.consumedAt = nowIso();
-      return { ...p };
+      return true;
     },
 
     async claimPairing(id) {

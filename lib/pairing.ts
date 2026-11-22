@@ -1,10 +1,12 @@
 import { getSessionSecret } from "./config";
-import { getStore, type Device, type PairingRow, type User } from "./db";
+import { getStore, type Device, type PairingRow, type Store, type User } from "./db";
 import { generateToken, hashSecret } from "./auth";
+import { userHasPaidLicense } from "./license-gate";
 import { nowIso } from "./db/types";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 export const PAIRING_TTL_MS = 10 * 60 * 1000;
+export const PAIRING_CONFIRM_TTL_MS = 10 * 60 * 1000;
 
 export function generatePairingCode(length = 6): string {
   const bytes = crypto.getRandomValues(new Uint8Array(length));
@@ -68,13 +70,14 @@ export async function confirmPairing(
     name: deviceName.trim().slice(0, 80) || "PC de casa",
     tokenHash: hashSecret(deviceToken),
   });
-  await store.confirmPairing({
+  const updated = await store.confirmPairing({
     id: row.id,
     userId: user.id,
     deviceId: device.id,
     deviceName: device.name,
     pendingDeviceToken: deviceToken,
   });
+  if (!updated) throw new Error("código já usado");
   await store.addAudit({
     id: crypto.randomUUID(),
     userId: user.id,
@@ -84,6 +87,77 @@ export async function confirmPairing(
     meta: device.name,
   });
   return device;
+}
+
+function cleanDeviceName(name: string): string {
+  return name.trim().slice(0, 80) || "PC de casa";
+}
+
+export async function startPairingByEmail(
+  store: Store,
+  userId: string,
+  deviceName: string,
+): Promise<{ confirmToken: string; expiresAt: string }> {
+  const user = await store.getUserById(userId);
+  if (!user) throw new Error("usuário não encontrado");
+  if (!(await userHasPaidLicense(user.email, store))) throw new Error("licença não encontrada");
+
+  const confirmToken = generateToken(32);
+  const expiresAt = new Date(Date.now() + PAIRING_CONFIRM_TTL_MS).toISOString();
+  // code_hash e poll_token_hash são colunas NOT NULL UNIQUE; o fluxo por e-mail
+  // não usa código nem poll token, então grava hashes de valores aleatórios descartáveis.
+  await store.createPairing({
+    id: crypto.randomUUID(),
+    codeHash: hashPairingValue(generateToken(24)),
+    pollTokenHash: hashPairingValue(generateToken(24)),
+    userId,
+    deviceId: null,
+    deviceName: cleanDeviceName(deviceName),
+    pendingDeviceToken: null,
+    confirmTokenHash: hashSecret(confirmToken),
+    emailSentAt: null,
+    confirmedAt: null,
+    expiresAt,
+    consumedAt: null,
+    createdAt: nowIso(),
+  });
+  return { confirmToken, expiresAt };
+}
+
+export async function confirmPairingByEmail(
+  store: Store,
+  confirmToken: string,
+  userId: string,
+): Promise<{ deviceToken: string; device: Device }> {
+  const row = await store.getPairingByConfirmHash(hashSecret(confirmToken));
+  if (!row || row.userId !== userId) throw new Error("token inválido");
+  if (isPairingExpired(row)) throw new Error("token expirado");
+  if (row.consumedAt) throw new Error("token já usado");
+
+  const deviceToken = generateToken(32);
+  const device = await store.createDevice({
+    id: crypto.randomUUID(),
+    userId,
+    name: cleanDeviceName(row.deviceName ?? ""),
+    tokenHash: hashSecret(deviceToken),
+  });
+  const updated = await store.confirmPairing({
+    id: row.id,
+    userId,
+    deviceId: device.id,
+    deviceName: device.name,
+    pendingDeviceToken: null,
+  });
+  if (!updated) throw new Error("token já usado");
+  await store.addAudit({
+    id: crypto.randomUUID(),
+    userId,
+    deviceId: device.id,
+    action: "pairing.confirm_email",
+    ip: null,
+    meta: device.name,
+  });
+  return { deviceToken, device };
 }
 
 export async function pollPairing(pollToken: string): Promise<
