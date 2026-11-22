@@ -222,6 +222,23 @@ function wrap(sql: Sql): Store {
       return row ? rowToUser(row) : null;
     },
 
+    async updateUser(id, input) {
+      const current = await this.getUserById(id);
+      if (!current) return null;
+      await sql`
+        UPDATE users SET name = ${input.name !== undefined ? input.name : current.name},
+          password_hash = ${input.passwordHash !== undefined ? input.passwordHash : current.passwordHash},
+          status = ${input.status !== undefined ? input.status : current.status ?? "ativo"},
+          license_id = ${input.licenseId !== undefined ? input.licenseId : current.licenseId ?? null}
+        WHERE id = ${id}
+      `;
+      return this.getUserById(id);
+    },
+
+    async updateUserLicense(id, licenseId) {
+      await sql`UPDATE users SET license_id = ${licenseId} WHERE id = ${id}`;
+    },
+
     async createSession(input) {
       const createdAt = nowIso();
       await sql`INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at, user_agent) VALUES (${input.id}, ${input.userId}, ${input.tokenHash}, ${input.expiresAt}, ${createdAt}, ${input.userAgent ?? null})`;

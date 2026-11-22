@@ -231,6 +231,25 @@ function wrap(db: DatabaseSync): Store {
       return row ? rowToUser(row as Record<string, unknown>) : null;
     },
 
+    async updateUser(id, input) {
+      const current = await this.getUserById(id);
+      if (!current) return null;
+      db.prepare(
+        `UPDATE users SET name = ?, password_hash = ?, status = ?, license_id = ? WHERE id = ?`,
+      ).run(
+        input.name !== undefined ? input.name : current.name,
+        input.passwordHash !== undefined ? input.passwordHash : current.passwordHash,
+        input.status !== undefined ? input.status : current.status ?? "ativo",
+        input.licenseId !== undefined ? input.licenseId : current.licenseId ?? null,
+        id,
+      );
+      return this.getUserById(id);
+    },
+
+    async updateUserLicense(id, licenseId) {
+      db.prepare(`UPDATE users SET license_id = ? WHERE id = ?`).run(licenseId, id);
+    },
+
     async createSession(input) {
       const createdAt = nowIso();
       db.prepare(

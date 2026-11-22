@@ -187,6 +187,25 @@ export function createMemoryStore(): Store {
       return u ? { ...u } : null;
     },
 
+    async updateUser(id, input) {
+      const u = users.get(id);
+      if (!u) return null;
+      if (input.name !== undefined) u.name = input.name;
+      if (input.passwordHash !== undefined) u.passwordHash = input.passwordHash;
+      if (input.status !== undefined) u.status = input.status;
+      if (input.licenseId !== undefined) u.licenseId = input.licenseId;
+      users.set(u.id, u);
+      return { ...u };
+    },
+
+    async updateUserLicense(id, licenseId) {
+      const u = users.get(id);
+      if (u) {
+        u.licenseId = licenseId;
+        users.set(u.id, u);
+      }
+    },
+
     async createSession(input) {
       const session: Session = {
         id: input.id,

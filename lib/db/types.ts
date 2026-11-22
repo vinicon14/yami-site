@@ -185,6 +185,8 @@ export interface Store {
   }): Promise<User>;
   getUserByEmail(email: string): Promise<User | null>;
   getUserById(id: string): Promise<User | null>;
+  updateUser(id: string, input: { name?: string | null; passwordHash?: string; status?: "ativo" | "bloqueado"; licenseId?: string | null }): Promise<User | null>;
+  updateUserLicense(id: string, licenseId: string | null): Promise<void>;
 
   createSession(input: {
     id: string;
