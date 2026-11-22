@@ -64,6 +64,9 @@ CREATE TABLE IF NOT EXISTS pairings (
   device_id TEXT,
   device_name TEXT,
   pending_device_token TEXT,
+  confirm_token_hash TEXT,
+  email_sent_at TEXT,
+  confirmed_at TEXT,
   expires_at TEXT NOT NULL,
   consumed_at TEXT,
   created_at TEXT NOT NULL

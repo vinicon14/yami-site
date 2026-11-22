@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryStore } from "../lib/db/memory";
-import { createSqliteStore } from "../lib/db/sqlite";
+import { createSqliteStore, getSqliteStore } from "../lib/db/sqlite";
 import { nowIso, type Store } from "../lib/db/types";
 
 // A Store do SQLite não expõe o handle do banco; rastreiamos as instâncias para
@@ -184,5 +184,34 @@ describe("novos métodos da Store", () => {
     expect(row?.id).toBe("evt-id-fornecido");
     expect(row?.order_id).toBe("o3");
     expect(row?.payment_id).toBe("p3");
+  });
+
+  it("migra uma tabela pairings legada adicionando as colunas de confirmação por e-mail (sqlite)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "yami-store-test-"));
+    tempDirs.push(dir);
+    const dbPath = join(dir, "legacy.db");
+    const legacy = new DatabaseSync(dbPath);
+    legacy.exec(`
+      CREATE TABLE pairings (
+        id TEXT PRIMARY KEY,
+        code_hash TEXT NOT NULL UNIQUE,
+        poll_token_hash TEXT NOT NULL UNIQUE,
+        user_id TEXT,
+        device_id TEXT,
+        device_name TEXT,
+        pending_device_token TEXT,
+        expires_at TEXT NOT NULL,
+        consumed_at TEXT,
+        created_at TEXT NOT NULL
+      );
+    `);
+    legacy.close();
+
+    getSqliteStore(dbPath);
+
+    const raw = new DatabaseSync(dbPath);
+    const columns = (raw.prepare("PRAGMA table_info(pairings)").all() as { name: string }[]).map((c) => c.name);
+    raw.close();
+    expect(columns).toEqual(expect.arrayContaining(["confirm_token_hash", "email_sent_at", "confirmed_at"]));
   });
 });

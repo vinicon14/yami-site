@@ -41,6 +41,12 @@ BEGIN
 END $$;
 `;
 
+const POSTGRES_PAIRING_EMAIL_COLUMNS = `
+ALTER TABLE pairings ADD COLUMN IF NOT EXISTS confirm_token_hash TEXT;
+ALTER TABLE pairings ADD COLUMN IF NOT EXISTS email_sent_at TEXT;
+ALTER TABLE pairings ADD COLUMN IF NOT EXISTS confirmed_at TEXT;
+`;
+
 export async function getPostgresClient(url: string): Promise<Sql> {
   if (clientSingleton && clientSingleton.url === url) return clientSingleton.sql;
   const postgres = (await import("postgres")).default;
@@ -72,6 +78,7 @@ export async function getPostgresStore(url: string): Promise<Store> {
 
 async function ensureSchema(sql: Sql): Promise<void> {
   await sql.unsafe(SCHEMA_SQL);
+  await sql.unsafe(POSTGRES_PAIRING_EMAIL_COLUMNS);
   try {
     await sql.unsafe(POSTGRES_RELAY_JSONB);
   } catch (err) {
@@ -245,8 +252,8 @@ function wrap(sql: Sql): Store {
     async createPairing(row) {
       await sql`
         INSERT INTO pairings
-          (id, code_hash, poll_token_hash, user_id, device_id, device_name, pending_device_token, expires_at, consumed_at, created_at)
-        VALUES (${row.id}, ${row.codeHash}, ${row.pollTokenHash}, ${row.userId}, ${row.deviceId}, ${row.deviceName}, ${row.pendingDeviceToken}, ${row.expiresAt}, ${row.consumedAt}, ${row.createdAt})
+          (id, code_hash, poll_token_hash, user_id, device_id, device_name, pending_device_token, confirm_token_hash, email_sent_at, confirmed_at, expires_at, consumed_at, created_at)
+        VALUES (${row.id}, ${row.codeHash}, ${row.pollTokenHash}, ${row.userId}, ${row.deviceId}, ${row.deviceName}, ${row.pendingDeviceToken}, ${row.confirmTokenHash}, ${row.emailSentAt}, ${row.confirmedAt}, ${row.expiresAt}, ${row.consumedAt}, ${row.createdAt})
       `;
       return { ...row };
     },
@@ -263,18 +270,22 @@ function wrap(sql: Sql): Store {
       return row ? rowToPairing(row) : null;
     },
 
+    async getPairingByConfirmHash(hash) {
+      const rows = await sql`SELECT * FROM pairings WHERE confirm_token_hash = ${hash}`;
+      const row = one(rows);
+      return row ? rowToPairing(row) : null;
+    },
+
     async confirmPairing(input) {
       const consumedAt = nowIso();
       const rows = await sql`
         UPDATE pairings
         SET user_id = ${input.userId}, device_id = ${input.deviceId}, device_name = ${input.deviceName},
             pending_device_token = ${input.pendingDeviceToken}, consumed_at = ${consumedAt}
-        WHERE id = ${input.id}
-        RETURNING *
+        WHERE id = ${input.id} AND consumed_at IS NULL
+        RETURNING id
       `;
-      const row = one(rows);
-      if (!row) throw new Error("pareamento não encontrado");
-      return rowToPairing(row);
+      return rows.length > 0;
     },
 
     async claimPairing(id) {

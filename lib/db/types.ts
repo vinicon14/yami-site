@@ -75,6 +75,9 @@ export type PairingRow = {
   deviceName: string | null;
   /** Clear device token kept only until the desktop claims it once. */
   pendingDeviceToken: string | null;
+  confirmTokenHash: string | null;
+  emailSentAt: string | null;
+  confirmedAt: string | null;
   expiresAt: string;
   consumedAt: string | null;
   createdAt: string;
@@ -193,13 +196,14 @@ export interface Store {
   createPairing(row: PairingRow): Promise<PairingRow>;
   getPairingByCodeHash(hash: string): Promise<PairingRow | null>;
   getPairingByPollHash(hash: string): Promise<PairingRow | null>;
+  getPairingByConfirmHash(hash: string): Promise<PairingRow | null>;
   confirmPairing(input: {
     id: string;
     userId: string;
     deviceId: string;
     deviceName: string;
-    pendingDeviceToken: string;
-  }): Promise<PairingRow>;
+    pendingDeviceToken: string | null;
+  }): Promise<boolean>;
   claimPairing(id: string): Promise<PairingRow>;
 
   createDevice(input: {

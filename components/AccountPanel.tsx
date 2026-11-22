@@ -23,6 +23,10 @@ type Device = {
 };
 type Audit = { id: string; action: string; createdAt: string; meta: string | null };
 
+export function pairingButtonText(hasPending: boolean): string {
+  return hasPending ? "Reenviar link" : "Enviar link de ativação";
+}
+
 export function AccountPanel({
   licenses,
   orders,
@@ -39,8 +43,8 @@ export function AccountPanel({
   const [downloadToken, setDownloadToken] = useState<string | null>(null);
   const [downloadExpires, setDownloadExpires] = useState<string | null>(null);
   const [apkReady, setApkReady] = useState(true);
-  const [code, setCode] = useState("");
   const [deviceName, setDeviceName] = useState("PC de casa");
+  const [hasPendingPairing, setHasPendingPairing] = useState(false);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -71,21 +75,20 @@ export function AccountPanel({
     setMsg("Links emitidos. Valem 24 horas e têm um limite de usos.");
   }
 
-  async function confirm() {
+  async function sendPairingLink() {
     setMsg(null);
-    const res = await fetch("/api/pairing/confirm", {
+    const res = await fetch("/api/pairing/email/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, deviceName }),
+      body: JSON.stringify({ email: "", deviceName }),
     });
     const data = (await res.json()) as { error?: string };
     if (!res.ok) {
-      setMsg(data.error ?? "não foi possível parear");
+      setMsg(data.error ?? "Não foi possível enviar o link.");
       return;
     }
-    setCode("");
-    setMsg("Computador pareado. Você já pode abrir o painel remoto.");
-    router.refresh();
+    setHasPendingPairing(true);
+    setMsg("Link enviado. Verifique seu e-mail e clique no link para ativar este computador.");
   }
 
   async function revoke(deviceId: string) {
@@ -203,26 +206,7 @@ export function AccountPanel({
         <p className="mt-2 text-sm text-muted">
           No aplicativo da YAMI, peça um código de pareamento e digite-o aqui.
         </p>
-        <form
-          className="mt-4 flex flex-wrap items-end gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void confirm();
-          }}
-        >
-          <div>
-            <label htmlFor="code" className="block text-xs text-muted">
-              Código
-            </label>
-            <input
-              id="code"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="field mt-1 w-36 font-mono tracking-widest"
-              maxLength={8}
-              autoComplete="off"
-            />
-          </div>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
           <div>
             <label htmlFor="deviceName" className="block text-xs text-muted">
               Nome do PC
@@ -234,10 +218,10 @@ export function AccountPanel({
               className="field mt-1 w-44"
             />
           </div>
-          <button type="submit" className="btn-primary">
-            Parear
+          <button type="button" onClick={() => void sendPairingLink()} className="btn-primary">
+            {pairingButtonText(hasPendingPairing)}
           </button>
-        </form>
+        </div>
         <ul className="mt-6 space-y-3">
           {devices.map((d) => (
             <li key={d.id} className="card flex flex-wrap items-center justify-between gap-3 p-3 text-sm">

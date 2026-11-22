@@ -35,7 +35,19 @@ function openDb(path: string): DatabaseSync {
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA_SQL);
+  ensurePairingEmailColumns(db);
   return db;
+}
+
+const PAIRING_EMAIL_COLUMNS = ["confirm_token_hash", "email_sent_at", "confirmed_at"];
+
+function ensurePairingEmailColumns(db: DatabaseSync): void {
+  const existing = new Set(
+    (db.prepare(`PRAGMA table_info(pairings)`).all() as { name: string }[]).map((c) => c.name),
+  );
+  for (const column of PAIRING_EMAIL_COLUMNS) {
+    if (!existing.has(column)) db.exec(`ALTER TABLE pairings ADD COLUMN ${column} TEXT`);
+  }
 }
 
 export function createSqliteStore(path: string): Store {
@@ -261,8 +273,9 @@ function wrap(db: DatabaseSync): Store {
       db.prepare(
         `INSERT INTO pairings
           (id, code_hash, poll_token_hash, user_id, device_id, device_name,
-           pending_device_token, expires_at, consumed_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           pending_device_token, confirm_token_hash, email_sent_at, confirmed_at,
+           expires_at, consumed_at, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         row.id,
         row.codeHash,
@@ -271,6 +284,9 @@ function wrap(db: DatabaseSync): Store {
         row.deviceId,
         row.deviceName,
         row.pendingDeviceToken,
+        row.confirmTokenHash,
+        row.emailSentAt,
+        row.confirmedAt,
         row.expiresAt,
         row.consumedAt,
         row.createdAt,
@@ -292,12 +308,19 @@ function wrap(db: DatabaseSync): Store {
       return row ? rowToPairing(row as Record<string, unknown>) : null;
     },
 
+    async getPairingByConfirmHash(hash) {
+      const row = db
+        .prepare(`SELECT * FROM pairings WHERE confirm_token_hash = ?`)
+        .get(hash);
+      return row ? rowToPairing(row as Record<string, unknown>) : null;
+    },
+
     async confirmPairing(input) {
       const consumedAt = nowIso();
-      db.prepare(
+      const result = db.prepare(
         `UPDATE pairings
          SET user_id = ?, device_id = ?, device_name = ?, pending_device_token = ?, consumed_at = ?
-         WHERE id = ?`,
+         WHERE id = ? AND consumed_at IS NULL`,
       ).run(
         input.userId,
         input.deviceId,
@@ -306,9 +329,7 @@ function wrap(db: DatabaseSync): Store {
         consumedAt,
         input.id,
       );
-      const row = db.prepare(`SELECT * FROM pairings WHERE id = ?`).get(input.id);
-      if (!row) throw new Error("pareamento não encontrado");
-      return rowToPairing(row as Record<string, unknown>);
+      return Number(result.changes) > 0;
     },
 
     async claimPairing(id) {

@@ -50,3 +50,33 @@ export async function maybeSendLicenseEmail(opts: {
   if (!res.ok) return { sent: false, reason: `http_${res.status}` };
   return { sent: true };
 }
+
+export async function sendPairingEmail(
+  email: string,
+  confirmToken: string,
+): Promise<{ sent: boolean; reason?: string }> {
+  if (!emailEnabled()) return { sent: false, reason: "disabled" };
+  const url = `${getSiteUrl()}/api/pairing/confirm?token=${encodeURIComponent(confirmToken)}`;
+  const body = {
+    from: getEmailFrom(),
+    to: [email],
+    subject: "Confirme o pareamento do YAMI",
+    text: [
+      "Clique no link abaixo para parear este computador com sua conta YAMI.",
+      "",
+      url,
+      "",
+      "O link expira em 10 minutos e pode ser usado uma única vez.",
+    ].join("\n"),
+  };
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getResendApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return { sent: false, reason: `http_${res.status}` };
+  return { sent: true };
+}
