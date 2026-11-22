@@ -93,35 +93,42 @@ function cleanDeviceName(name: string): string {
   return name.trim().slice(0, 80) || "PC de casa";
 }
 
+export function generateConfirmToken(): string {
+  return generateToken(32);
+}
+
 export async function startPairingByEmail(
   store: Store,
-  userId: string,
+  email: string,
   deviceName: string,
-): Promise<{ confirmToken: string; expiresAt: string }> {
-  const user = await store.getUserById(userId);
+  now = new Date(),
+): Promise<{ pollToken: string; confirmToken: string; expiresAt: string; email: string }> {
+  const normalizedEmail = String(email ?? "").trim().toLowerCase();
+  const user = await store.getUserByEmail(normalizedEmail);
   if (!user) throw new Error("usuário não encontrado");
-  if (!(await userHasPaidLicense(user.email, store))) throw new Error("licença não encontrada");
+  if (!(await userHasPaidLicense(user.email, store))) throw new Error("licença necessária");
 
-  const confirmToken = generateToken(32);
-  const expiresAt = new Date(Date.now() + PAIRING_CONFIRM_TTL_MS).toISOString();
+  const pollToken = generateToken(24);
+  const confirmToken = generateConfirmToken();
+  const expiresAt = new Date(now.getTime() + PAIRING_CONFIRM_TTL_MS).toISOString();
   // code_hash e poll_token_hash são colunas NOT NULL UNIQUE; o fluxo por e-mail
   // não usa código nem poll token, então grava hashes de valores aleatórios descartáveis.
   await store.createPairing({
     id: crypto.randomUUID(),
     codeHash: hashPairingValue(generateToken(24)),
-    pollTokenHash: hashPairingValue(generateToken(24)),
-    userId,
+    pollTokenHash: hashPairingValue(pollToken),
+    userId: user.id,
     deviceId: null,
     deviceName: cleanDeviceName(deviceName),
     pendingDeviceToken: null,
+    expiresAt,
+    consumedAt: null,
     confirmTokenHash: hashSecret(confirmToken),
     emailSentAt: null,
     confirmedAt: null,
-    expiresAt,
-    consumedAt: null,
     createdAt: nowIso(),
   });
-  return { confirmToken, expiresAt };
+  return { pollToken, confirmToken, expiresAt, email: user.email };
 }
 
 export async function confirmPairingByEmail(
@@ -133,17 +140,19 @@ export async function confirmPairingByEmail(
   if (!row || row.userId !== userId) throw new Error("token inválido");
   if (isPairingExpired(row)) throw new Error("token expirado");
   if (row.consumedAt) throw new Error("token já usado");
+  const user = await store.getUserById(userId);
+  if (!user) throw new Error("token inválido");
 
   const deviceToken = generateToken(32);
   const device = await store.createDevice({
     id: crypto.randomUUID(),
-    userId,
-    name: cleanDeviceName(row.deviceName ?? ""),
+    userId: user.id,
+    name: row.deviceName ?? "PC de casa",
     tokenHash: hashSecret(deviceToken),
   });
   const updated = await store.confirmPairing({
     id: row.id,
-    userId,
+    userId: user.id,
     deviceId: device.id,
     deviceName: device.name,
     pendingDeviceToken: null,
@@ -151,7 +160,7 @@ export async function confirmPairingByEmail(
   if (!updated) throw new Error("token já usado");
   await store.addAudit({
     id: crypto.randomUUID(),
-    userId,
+    userId: user.id,
     deviceId: device.id,
     action: "pairing.confirm_email",
     ip: null,

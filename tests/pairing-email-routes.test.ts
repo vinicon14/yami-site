@@ -28,7 +28,7 @@ describe("pareamento por e-mail", () => {
 
   it("confirma pelo link com token válido", async () => {
     const { store, cookie } = await seed();
-    const started = await startPairingByEmail(store, "u1", "PC de casa");
+    const started = await startPairingByEmail(store, "u@example.com", "PC de casa");
     const confirm = await confirmGet(req(`/api/pairing/confirm?token=${started.confirmToken}`, { headers: { cookie } }));
     expect(confirm.status).toBe(200);
     const body = await confirm.json();
