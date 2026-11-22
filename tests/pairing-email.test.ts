@@ -35,4 +35,36 @@ describe("pareamento por e-mail", () => {
     await confirmPairingByEmail(store, started.confirmToken, "u1");
     await expect(confirmPairingByEmail(store, started.confirmToken, "u1")).rejects.toThrow("token já usado");
   });
+
+  it("grava o token de dispositivo como pendente para o polling entregar", async () => {
+    const store = createMemoryStore();
+    await seed(store);
+    const started = await startPairingByEmail(store, "u@example.com", "PC de casa");
+    const confirmed = await confirmPairingByEmail(store, started.confirmToken, "u1");
+    const row = await store.getPairingByConfirmHash(hashSecret(started.confirmToken));
+    expect(row?.pendingDeviceToken).toBe(confirmed.deviceToken);
+  });
+
+  it("exige licença paga na confirmação", async () => {
+    const store = createMemoryStore();
+    await seed(store);
+    await store.createUser({ id: "u2", email: "semlicenca@example.com", passwordHash: await hashPassword("senha-forte-123") });
+    const confirmToken = "a".repeat(64);
+    await store.createPairing({
+      id: "p2",
+      codeHash: hashSecret("code-p2"),
+      pollTokenHash: hashSecret("poll-p2"),
+      userId: "u2",
+      deviceId: null,
+      deviceName: "PC de casa",
+      pendingDeviceToken: null,
+      confirmTokenHash: hashSecret(confirmToken),
+      emailSentAt: null,
+      confirmedAt: null,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      consumedAt: null,
+      createdAt: new Date().toISOString(),
+    });
+    await expect(confirmPairingByEmail(store, confirmToken, "u2")).rejects.toThrow("licença necessária");
+  });
 });

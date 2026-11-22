@@ -142,6 +142,7 @@ export async function confirmPairingByEmail(
   if (row.consumedAt) throw new Error("token já usado");
   const user = await store.getUserById(userId);
   if (!user) throw new Error("token inválido");
+  if (!(await userHasPaidLicense(user.email, store))) throw new Error("licença necessária");
 
   const deviceToken = generateToken(32);
   const device = await store.createDevice({
@@ -155,7 +156,7 @@ export async function confirmPairingByEmail(
     userId: user.id,
     deviceId: device.id,
     deviceName: device.name,
-    pendingDeviceToken: null,
+    pendingDeviceToken: deviceToken,
   });
   if (!updated) throw new Error("token já usado");
   await store.addAudit({
