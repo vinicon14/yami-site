@@ -129,7 +129,7 @@ function Slot({
       seen.add(h.sha256);
       return true;
     });
-  }, [history, current?.sha256]);
+  }, [history, current]);
 
   async function publish() {
     onError("");

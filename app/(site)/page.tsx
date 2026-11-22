@@ -2,6 +2,7 @@ import { ScreenshotFrame } from "@/components/ScreenshotFrame";
 import { BuyButton } from "@/components/BuyButton";
 import { ACCEPTED_PAYMENT_COPY } from "@/lib/mp-checkout";
 import { formatPriceBrl, getPriceBrl, PRODUCT, getItoolsUrl } from "@/lib/config";
+import { serializeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export default function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <article>
         <header className="site-grid border-b border-line">
