@@ -4,7 +4,7 @@ import { createSessionForUser, hashPassword } from "../lib/auth";
 import { resetStoreCache, setStoreForTests } from "../lib/db";
 import { startPairingByEmail } from "../lib/pairing";
 import { sendPairingEmail } from "../lib/email";
-import { GET as confirmGet } from "../app/api/pairing/confirm/route";
+import { GET as confirmGet, POST as confirmPost } from "../app/api/pairing/confirm/route";
 
 async function seed() {
   const store = createMemoryStore();
@@ -31,9 +31,14 @@ describe("pareamento por e-mail", () => {
     const started = await startPairingByEmail(store, "u@example.com", "PC de casa");
     const confirm = await confirmGet(req(`/api/pairing/confirm?token=${started.confirmToken}`, { headers: { cookie } }));
     expect(confirm.status).toBe(200);
-    const body = await confirm.json();
-    expect(body.ok).toBe(true);
-    expect(body.device.name).toBe("PC de casa");
+    const getBody = await confirm.json();
+    expect(getBody.ok).toBe(true);
+    expect(getBody.pending).toBe(true);
+
+    const post = await confirmPost(req("/api/pairing/confirm", { method: "POST", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ token: started.confirmToken }) }));
+    expect(post.status).toBe(200);
+    const postBody = await post.json();
+    expect(postBody.device.name).toBe("PC de casa");
   });
 
   it("rejeita token inválido", async () => {
