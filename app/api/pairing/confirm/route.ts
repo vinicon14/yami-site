@@ -1,7 +1,7 @@
 import { getSessionUser, readSessionCookie } from "@/lib/auth";
 import { getStore } from "@/lib/db";
 import { clientIp, jsonError, sameOrigin } from "@/lib/http";
-import { confirmPairing } from "@/lib/pairing";
+import { confirmPairing, confirmPairingByEmail } from "@/lib/pairing";
 import { LICENSE_MISSING_HINT, LICENSE_MISSING_TITLE, userHasPaidLicense } from "@/lib/license-gate";
 import { rateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
@@ -42,5 +42,21 @@ export async function POST(req: Request) {
     const message = err instanceof Error ? err.message : "falha no pareamento";
     const status = message.includes("inválido") || message.includes("expirado") || message.includes("usado") ? 400 : 500;
     return jsonError(message, status);
+  }
+}
+
+export async function GET(req: Request) {
+  const token = new URL(req.url).searchParams.get("token") ?? "";
+  if (!token) return jsonError("token ausente", 400);
+  const current = await getSessionUser(readSessionCookie(req));
+  if (!current) {
+    return NextResponse.redirect(new URL(`/entrar?next=/parear&token=${encodeURIComponent(token)}`, req.url));
+  }
+  const store = await getStore();
+  try {
+    const result = await confirmPairingByEmail(store, token, current.user.id);
+    return NextResponse.json({ ok: true, device: { id: result.device.id, name: result.device.name } });
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : "token inválido", 400);
   }
 }
