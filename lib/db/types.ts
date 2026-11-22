@@ -121,6 +121,14 @@ export type FeatureRequest = {
   status: FeatureRequestStatus;
   publishedVersion: string | null;
   adminNote: string | null;
+  fileName: string | null;
+  fileSize: number | null;
+  fileSha256: string | null;
+  fileBlobPathname: string | null;
+  appVersion: string | null;
+  appIcon: string | null;
+  publishedAssetUrl: string | null;
+  publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

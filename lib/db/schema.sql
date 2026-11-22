@@ -138,6 +138,14 @@ CREATE TABLE IF NOT EXISTS feature_requests (
   status TEXT NOT NULL DEFAULT 'pendente',
   published_version TEXT,
   admin_note TEXT,
+  file_name TEXT,
+  file_size INTEGER,
+  file_sha256 TEXT,
+  file_blob_pathname TEXT,
+  app_version TEXT,
+  app_icon TEXT,
+  published_asset_url TEXT,
+  published_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
