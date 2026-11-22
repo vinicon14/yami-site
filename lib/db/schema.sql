@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS orders (
   status TEXT NOT NULL,
   mp_preference_id TEXT,
   mp_payment_id TEXT UNIQUE,
+  user_id TEXT,
   created_at TEXT NOT NULL,
   paid_at TEXT
 );
@@ -34,6 +35,8 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   name TEXT,
   password_hash TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'ativo',
+  license_id TEXT,
   created_at TEXT NOT NULL
 );
 

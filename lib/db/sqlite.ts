@@ -68,9 +68,9 @@ function wrap(db: DatabaseSync): Store {
     async createOrder(input: NewOrderInput): Promise<Order> {
       const createdAt = nowIso();
       db.prepare(
-        `INSERT INTO orders (id, email, name, amount_brl, currency, status, created_at)
-         VALUES (?, ?, ?, ?, 'BRL', 'pending', ?)`,
-      ).run(input.id, input.email.toLowerCase(), input.name ?? null, input.amountBrl, createdAt);
+        `INSERT INTO orders (id, email, name, amount_brl, currency, status, user_id, created_at)
+         VALUES (?, ?, ?, ?, 'BRL', 'pending', ?, ?)`,
+      ).run(input.id, input.email.toLowerCase(), input.name ?? null, input.amountBrl, input.userId ?? null, createdAt);
       const order = await this.getOrderById(input.id);
       if (!order) throw new Error("falha ao criar pedido");
       return order;
@@ -229,6 +229,30 @@ function wrap(db: DatabaseSync): Store {
     async getUserById(id) {
       const row = db.prepare(`SELECT * FROM users WHERE id = ?`).get(id);
       return row ? rowToUser(row as Record<string, unknown>) : null;
+    },
+
+    async listUsers() {
+      const rows = db.prepare(`SELECT * FROM users ORDER BY created_at DESC`).all();
+      return (rows as Record<string, unknown>[]).map(rowToUser);
+    },
+
+    async updateUser(id, input) {
+      const current = await this.getUserById(id);
+      if (!current) return null;
+      db.prepare(
+        `UPDATE users SET name = ?, password_hash = ?, status = ?, license_id = ? WHERE id = ?`,
+      ).run(
+        input.name !== undefined ? input.name : current.name,
+        input.passwordHash !== undefined ? input.passwordHash : current.passwordHash,
+        input.status !== undefined ? input.status : current.status ?? "ativo",
+        input.licenseId !== undefined ? input.licenseId : current.licenseId ?? null,
+        id,
+      );
+      return this.getUserById(id);
+    },
+
+    async updateUserLicense(id, licenseId) {
+      db.prepare(`UPDATE users SET license_id = ? WHERE id = ?`).run(licenseId, id);
     },
 
     async createSession(input) {

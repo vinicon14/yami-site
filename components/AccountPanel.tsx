@@ -45,6 +45,8 @@ export function AccountPanel({
   const [apkReady, setApkReady] = useState(true);
   const [deviceName, setDeviceName] = useState("PC de casa");
   const [hasPendingPairing, setHasPendingPairing] = useState(false);
+  const [accountName, setAccountName] = useState("");
+  const [accountPassword, setAccountPassword] = useState("");
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -91,6 +93,24 @@ export function AccountPanel({
     setMsg("Link enviado. Verifique seu e-mail e clique no link para ativar este computador.");
   }
 
+  async function saveAccount(event: React.FormEvent) {
+    event.preventDefault();
+    setMsg(null);
+    const res = await fetch("/api/conta", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: accountName, password: accountPassword }),
+    });
+    const data = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      setMsg(data.error ?? "Não foi possível salvar.");
+      return;
+    }
+    setAccountPassword("");
+    setMsg("Dados da conta atualizados.");
+    router.refresh();
+  }
+
   async function revoke(deviceId: string) {
     setMsg(null);
     const res = await fetch("/api/pairing/revoke", {
@@ -113,6 +133,35 @@ export function AccountPanel({
           {msg}
         </p>
       )}
+
+      <section>
+        <h2 className="text-2xl font-semibold">Dados da conta</h2>
+        <form onSubmit={(e) => void saveAccount(e)} className="card mt-4 space-y-3 p-4">
+          <label className="block text-xs text-muted">
+            Nome
+            <input
+              className="field mt-1 w-full"
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              maxLength={80}
+              placeholder="Seu nome"
+            />
+          </label>
+          <label className="block text-xs text-muted">
+            Nova senha <span className="font-normal">(deixe em branco para manter)</span>
+            <input
+              className="field mt-1 w-full"
+              type="password"
+              value={accountPassword}
+              onChange={(e) => setAccountPassword(e.target.value)}
+              minLength={8}
+              maxLength={128}
+              autoComplete="new-password"
+            />
+          </label>
+          <button className="btn-primary" type="submit">Salvar dados</button>
+        </form>
+      </section>
 
       <section>
         <h2 className="text-2xl font-semibold">Licenças</h2>

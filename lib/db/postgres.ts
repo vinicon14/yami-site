@@ -99,8 +99,8 @@ function wrap(sql: Sql): Store {
     async createOrder(input: NewOrderInput): Promise<Order> {
       const createdAt = nowIso();
       const rows = await sql`
-        INSERT INTO orders (id, email, name, amount_brl, currency, status, created_at)
-        VALUES (${input.id}, ${input.email.toLowerCase()}, ${input.name ?? null}, ${input.amountBrl}, 'BRL', 'pending', ${createdAt})
+        INSERT INTO orders (id, email, name, amount_brl, currency, status, user_id, created_at)
+        VALUES (${input.id}, ${input.email.toLowerCase()}, ${input.name ?? null}, ${input.amountBrl}, 'BRL', 'pending', ${input.userId ?? null}, ${createdAt})
         RETURNING *
       `;
       return rowToOrder(one(rows) as Record<string, unknown>);
@@ -220,6 +220,28 @@ function wrap(sql: Sql): Store {
       const rows = await sql`SELECT * FROM users WHERE id = ${id}`;
       const row = one(rows);
       return row ? rowToUser(row) : null;
+    },
+
+    async listUsers() {
+      const rows = await sql`SELECT * FROM users ORDER BY created_at DESC`;
+      return rows.map((r) => rowToUser(r as Record<string, unknown>));
+    },
+
+    async updateUser(id, input) {
+      const current = await this.getUserById(id);
+      if (!current) return null;
+      await sql`
+        UPDATE users SET name = ${input.name !== undefined ? input.name : current.name},
+          password_hash = ${input.passwordHash !== undefined ? input.passwordHash : current.passwordHash},
+          status = ${input.status !== undefined ? input.status : current.status ?? "ativo"},
+          license_id = ${input.licenseId !== undefined ? input.licenseId : current.licenseId ?? null}
+        WHERE id = ${id}
+      `;
+      return this.getUserById(id);
+    },
+
+    async updateUserLicense(id, licenseId) {
+      await sql`UPDATE users SET license_id = ${licenseId} WHERE id = ${id}`;
     },
 
     async createSession(input) {

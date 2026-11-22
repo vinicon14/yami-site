@@ -38,6 +38,7 @@ export function createMemoryStore(): Store {
         status: "pending",
         mpPreferenceId: null,
         mpPaymentId: null,
+        userId: input.userId ?? null,
         createdAt: nowIso(),
         paidAt: null,
       };
@@ -184,6 +185,29 @@ export function createMemoryStore(): Store {
     async getUserById(id) {
       const u = users.get(id);
       return u ? { ...u } : null;
+    },
+
+    async listUsers() {
+      return [...users.values()].map((u) => ({ ...u }));
+    },
+
+    async updateUser(id, input) {
+      const u = users.get(id);
+      if (!u) return null;
+      if (input.name !== undefined) u.name = input.name;
+      if (input.passwordHash !== undefined) u.passwordHash = input.passwordHash;
+      if (input.status !== undefined) u.status = input.status;
+      if (input.licenseId !== undefined) u.licenseId = input.licenseId;
+      users.set(u.id, u);
+      return { ...u };
+    },
+
+    async updateUserLicense(id, licenseId) {
+      const u = users.get(id);
+      if (u) {
+        u.licenseId = licenseId;
+        users.set(u.id, u);
+      }
     },
 
     async createSession(input) {

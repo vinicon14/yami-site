@@ -85,6 +85,9 @@ export async function fulfillApprovedPayment(opts: {
   if (!license) {
     license = await store.createLicense(paid.id, generateLicenseKey());
   }
+  if (paid.userId) {
+    await store.updateUserLicense(paid.userId, license.id);
+  }
 
   if (alreadyPaid) {
     return {

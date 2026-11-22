@@ -6,6 +6,7 @@ import { getCurrentManifest } from "@/lib/release-store";
 import { toPublicManifest } from "@/lib/release";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import { AdminRequestsPanel } from "@/components/admin/AdminRequestsPanel";
+import { UsersPanel } from "@/components/admin/UsersPanel";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -36,6 +37,7 @@ export default async function AdminPage() {
         history={history.map(publicHistoryItem)}
       />
       <AdminRequestsPanel items={requests} />
+      <UsersPanel />
     </>
   );
 }

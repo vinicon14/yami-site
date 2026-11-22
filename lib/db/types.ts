@@ -10,6 +10,7 @@ export type Order = {
   status: OrderStatus;
   mpPreferenceId: string | null;
   mpPaymentId: string | null;
+  userId?: string | null;
   createdAt: string;
   paidAt: string | null;
 };
@@ -37,6 +38,7 @@ export type NewOrderInput = {
   email: string;
   name?: string | null;
   amountBrl: number;
+  userId?: string | null;
 };
 
 export type User = {
@@ -44,6 +46,8 @@ export type User = {
   email: string;
   name: string | null;
   passwordHash: string;
+  status?: "ativo" | "bloqueado";
+  licenseId?: string | null;
   createdAt: string;
 };
 
@@ -181,6 +185,9 @@ export interface Store {
   }): Promise<User>;
   getUserByEmail(email: string): Promise<User | null>;
   getUserById(id: string): Promise<User | null>;
+  listUsers(): Promise<User[]>;
+  updateUser(id: string, input: { name?: string | null; passwordHash?: string; status?: "ativo" | "bloqueado"; licenseId?: string | null }): Promise<User | null>;
+  updateUserLicense(id: string, licenseId: string | null): Promise<void>;
 
   createSession(input: {
     id: string;
