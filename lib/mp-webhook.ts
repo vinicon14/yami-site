@@ -1,4 +1,9 @@
-import { chargesEnabled, getMpAccessToken, getWebhookSecret } from "./config";
+import {
+  getMpAccessToken,
+  getMpMode,
+  getWebhookSecret,
+  hasMpAccessToken,
+} from "./config";
 import { getStore, type Store } from "./db";
 import { fulfillApprovedPayment, paymentMatchesOrder } from "./fulfill";
 import { fetchPayment } from "./mp-checkout";
@@ -79,7 +84,11 @@ export async function processMercadoPagoNotification(opts: {
   if (!isPaymentTopic(opts.body, opts.url)) {
     return { ok: true, skipped: "ignored_topic" };
   }
-  if (!chargesEnabled()) {
+  // O processamento do webhook depende apenas de acesso autenticado à API e
+  // de uma assinatura válida quando MP_WEBHOOK_SECRET está configurado.
+  // chargesEnabled() também exige o segredo para abrir a venda, mas aqui a
+  // confirmação de um pagamento real continua válida sem ele.
+  if (getMpMode() !== "production" || !hasMpAccessToken()) {
     return { ok: true, skipped: "charges_disabled" };
   }
 

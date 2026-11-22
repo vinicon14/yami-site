@@ -34,7 +34,8 @@ export function paymentMatchesOrder(payment: MpPayment, order: Order): {
   if (payment.status !== "approved") {
     return { ok: false, reason: `status_${payment.status}` };
   }
-  if (payment.external_reference && payment.external_reference !== order.id) {
+  if (!payment.external_reference) return { ok: false, reason: "missing_external_reference" };
+  if (payment.external_reference !== order.id) {
     return { ok: false, reason: "external_reference_mismatch" };
   }
   if (payment.currency_id && payment.currency_id !== "BRL") {

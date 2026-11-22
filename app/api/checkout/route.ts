@@ -94,7 +94,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "Cobrança real está ligada, mas o token do Mercado Pago não está configurado neste ambiente.",
+              "Cobrança real está ligada, mas o token do Mercado Pago ou o segredo do webhook (MP_WEBHOOK_SECRET) não estão configurados neste ambiente.",
           },
           { status: 503 },
         );
