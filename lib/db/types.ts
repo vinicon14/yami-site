@@ -38,6 +38,7 @@ export type NewOrderInput = {
   email: string;
   name?: string | null;
   amountBrl: number;
+  userId?: string | null;
 };
 
 export type User = {

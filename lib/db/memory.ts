@@ -38,6 +38,7 @@ export function createMemoryStore(): Store {
         status: "pending",
         mpPreferenceId: null,
         mpPaymentId: null,
+        userId: input.userId ?? null,
         createdAt: nowIso(),
         paidAt: null,
       };

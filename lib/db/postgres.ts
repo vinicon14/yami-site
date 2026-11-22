@@ -99,8 +99,8 @@ function wrap(sql: Sql): Store {
     async createOrder(input: NewOrderInput): Promise<Order> {
       const createdAt = nowIso();
       const rows = await sql`
-        INSERT INTO orders (id, email, name, amount_brl, currency, status, created_at)
-        VALUES (${input.id}, ${input.email.toLowerCase()}, ${input.name ?? null}, ${input.amountBrl}, 'BRL', 'pending', ${createdAt})
+        INSERT INTO orders (id, email, name, amount_brl, currency, status, user_id, created_at)
+        VALUES (${input.id}, ${input.email.toLowerCase()}, ${input.name ?? null}, ${input.amountBrl}, 'BRL', 'pending', ${input.userId ?? null}, ${createdAt})
         RETURNING *
       `;
       return rowToOrder(one(rows) as Record<string, unknown>);

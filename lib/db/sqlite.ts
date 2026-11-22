@@ -68,9 +68,9 @@ function wrap(db: DatabaseSync): Store {
     async createOrder(input: NewOrderInput): Promise<Order> {
       const createdAt = nowIso();
       db.prepare(
-        `INSERT INTO orders (id, email, name, amount_brl, currency, status, created_at)
-         VALUES (?, ?, ?, ?, 'BRL', 'pending', ?)`,
-      ).run(input.id, input.email.toLowerCase(), input.name ?? null, input.amountBrl, createdAt);
+        `INSERT INTO orders (id, email, name, amount_brl, currency, status, user_id, created_at)
+         VALUES (?, ?, ?, ?, 'BRL', 'pending', ?, ?)`,
+      ).run(input.id, input.email.toLowerCase(), input.name ?? null, input.amountBrl, input.userId ?? null, createdAt);
       const order = await this.getOrderById(input.id);
       if (!order) throw new Error("falha ao criar pedido");
       return order;

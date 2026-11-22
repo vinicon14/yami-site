@@ -57,6 +57,23 @@ export function CheckoutForm({ price, production, defaultEmail, defaultName }: P
           className="field mt-1"
         />
       </div>
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium">
+          Senha <span className="font-normal text-muted">(obrigatória para contas novas)</span>
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          minLength={8}
+          maxLength={128}
+          autoComplete="new-password"
+          className="field mt-1"
+        />
+        <p className="mt-1 text-xs text-muted">
+          Crie a senha da sua conta YAMI. Se já tiver conta, deixe em branco.
+        </p>
+      </div>
       <label className="flex items-start gap-2 text-sm leading-relaxed">
         <input type="checkbox" name="accepted" className="mt-1" required />
         <span>

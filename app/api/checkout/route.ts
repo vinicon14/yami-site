@@ -9,6 +9,7 @@ import {
   PRODUCT,
 } from "@/lib/config";
 import { getStore } from "@/lib/db";
+import { ensureCheckoutAccount } from "@/lib/checkout-account";
 import {
   buildPreferencePayload,
   checkoutInitPoint,
@@ -51,17 +52,20 @@ export async function POST(req: Request) {
     const contentType = req.headers.get("content-type") ?? "";
     let email = "";
     let name = "";
+    let password = "";
     let accepted = false;
 
     if (contentType.includes("application/json")) {
       const body = (await req.json()) as Record<string, unknown>;
       email = String(body.email ?? "").trim().toLowerCase();
       name = String(body.name ?? "").trim();
+      password = String(body.password ?? "");
       accepted = Boolean(body.accepted);
     } else {
       const form = await req.formData();
       email = String(form.get("email") ?? "").trim().toLowerCase();
       name = String(form.get("name") ?? "").trim();
+      password = String(form.get("password") ?? "");
       accepted = String(form.get("accepted") ?? "") === "on" || String(form.get("accepted") ?? "") === "true";
     }
 
@@ -82,11 +86,13 @@ export async function POST(req: Request) {
         status: 303,
       });
     }
+    const user = await ensureCheckoutAccount(store, email, password, name);
     const order = await store.createOrder({
       id: crypto.randomUUID(),
       email,
       name: name || null,
       amountBrl: price,
+      userId: user.id,
     });
 
     if (!chargesEnabled()) {
