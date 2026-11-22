@@ -10,6 +10,7 @@ export type Order = {
   status: OrderStatus;
   mpPreferenceId: string | null;
   mpPaymentId: string | null;
+  userId?: string | null;
   createdAt: string;
   paidAt: string | null;
 };
@@ -44,6 +45,8 @@ export type User = {
   email: string;
   name: string | null;
   passwordHash: string;
+  status?: "ativo" | "bloqueado";
+  licenseId?: string | null;
   createdAt: string;
 };
 

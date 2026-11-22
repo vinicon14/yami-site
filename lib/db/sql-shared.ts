@@ -29,6 +29,7 @@ export const SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS orders (
   status TEXT NOT NULL,
   mp_preference_id TEXT,
   mp_payment_id TEXT UNIQUE,
+  user_id TEXT,
   created_at TEXT NOT NULL,
   paid_at TEXT
 );
@@ -56,6 +57,8 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   name TEXT,
   password_hash TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'ativo',
+  license_id TEXT,
   created_at TEXT NOT NULL
 );
 
@@ -221,6 +224,7 @@ export function rowToOrder(row: Record<string, unknown>): Order {
     mpPreferenceId:
       row.mp_preference_id == null ? null : String(row.mp_preference_id),
     mpPaymentId: row.mp_payment_id == null ? null : String(row.mp_payment_id),
+    userId: row.user_id == null ? null : String(row.user_id),
     createdAt: String(row.created_at),
     paidAt: row.paid_at == null ? null : String(row.paid_at),
   };
@@ -254,6 +258,8 @@ export function rowToUser(row: Record<string, unknown>): User {
     email: String(row.email),
     name: row.name == null ? null : String(row.name),
     passwordHash: String(row.password_hash),
+    status: row.status == null ? "ativo" : (String(row.status) as "ativo" | "bloqueado"),
+    licenseId: row.license_id == null ? null : String(row.license_id),
     createdAt: String(row.created_at),
   };
 }
