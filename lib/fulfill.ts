@@ -73,23 +73,30 @@ export async function fulfillApprovedPayment(opts: {
     if (!check.ok) throw new Error(check.reason ?? "pagamento inválido");
   }
 
-  let paid = order;
-  let alreadyPaid = order.status === "paid";
-  if (!alreadyPaid) {
-    paid = await store.markPaid(order.id, String(opts.paymentId));
-  } else if (!order.mpPaymentId) {
-    paid = await store.markPaid(order.id, String(opts.paymentId));
-    alreadyPaid = true;
-  }
+  const result = await store.markPaidOnce({
+    orderId: order.id,
+    paymentId: String(opts.paymentId),
+  });
+  if (!result) throw new Error("pagamento já associado a outro pedido");
+  const paid = result.order;
+  const alreadyPaid = !result.changed;
 
   let license = await store.getLicenseByOrderId(paid.id);
   if (!license) {
     license = await store.createLicense(paid.id, generateLicenseKey());
   }
 
-  const issued = await issueDownloadToken(store, paid, license);
+  if (alreadyPaid) {
+    return {
+      order: paid,
+      license,
+      downloadToken: "",
+      expiresAt: paid.paidAt ?? new Date().toISOString(),
+      alreadyPaid: true,
+    };
+  }
 
-  // E-mail é opcional e não bloqueia a entrega.
+  const issued = await issueDownloadToken(store, paid, license);
   void maybeSendLicenseEmail({
     email: paid.email,
     licenseKey: license.key,
@@ -103,7 +110,7 @@ export async function fulfillApprovedPayment(opts: {
     license,
     downloadToken: issued.token,
     expiresAt: issued.expiresAt,
-    alreadyPaid,
+    alreadyPaid: false,
   };
 }
 
