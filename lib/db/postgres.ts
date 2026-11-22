@@ -222,6 +222,11 @@ function wrap(sql: Sql): Store {
       return row ? rowToUser(row) : null;
     },
 
+    async listUsers() {
+      const rows = await sql`SELECT * FROM users ORDER BY created_at DESC`;
+      return rows.map((r) => rowToUser(r as Record<string, unknown>));
+    },
+
     async updateUser(id, input) {
       const current = await this.getUserById(id);
       if (!current) return null;

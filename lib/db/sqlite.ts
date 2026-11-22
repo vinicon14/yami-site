@@ -231,6 +231,11 @@ function wrap(db: DatabaseSync): Store {
       return row ? rowToUser(row as Record<string, unknown>) : null;
     },
 
+    async listUsers() {
+      const rows = db.prepare(`SELECT * FROM users ORDER BY created_at DESC`).all();
+      return (rows as Record<string, unknown>[]).map(rowToUser);
+    },
+
     async updateUser(id, input) {
       const current = await this.getUserById(id);
       if (!current) return null;

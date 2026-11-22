@@ -187,6 +187,10 @@ export function createMemoryStore(): Store {
       return u ? { ...u } : null;
     },
 
+    async listUsers() {
+      return [...users.values()].map((u) => ({ ...u }));
+    },
+
     async updateUser(id, input) {
       const u = users.get(id);
       if (!u) return null;
