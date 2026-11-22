@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { upload } from "@vercel/blob/client";
 import type { FeatureRequestStatus } from "@/lib/db/types";
 import type { PublicFeatureRequest } from "@/lib/feature-requests";
 
@@ -22,7 +23,47 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("geral");
+  const [file, setFile] = useState<File | null>(null);
+  const [fileMeta, setFileMeta] = useState<{ name: string; size: number; sha256: string; pathname: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+
+  async function sha256File(selected: File): Promise<string> {
+    const digest = await crypto.subtle.digest("SHA-256", await selected.arrayBuffer());
+    return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0] ?? null;
+    setFile(selected);
+    setFileMeta(null);
+    if (!selected) return;
+    const sha256 = await sha256File(selected);
+    const pathname = `apps/${crypto.randomUUID()}/${selected.name.replace(/[^A-Za-z0-9._+-]/g, "_")}`;
+    setUploading(true);
+    setMessage("Enviando arquivo…");
+    try {
+      const uploaded = await upload(pathname, selected, {
+        access: "private",
+        multipart: true,
+        handleUploadUrl: "/api/uploads/app",
+        contentType: "application/octet-stream",
+        clientPayload: JSON.stringify({
+          filename: selected.name,
+          version: "1.0.0",
+          size: selected.size,
+          sha256,
+        }),
+      });
+      setFileMeta({ name: selected.name, size: selected.size, sha256, pathname: uploaded.pathname });
+      setMessage("Arquivo enviado. Envie a solicitação.");
+    } catch (error) {
+      setFile(null);
+      setMessage(error instanceof Error ? error.message : "Não foi possível enviar o arquivo.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function create(event: FormEvent) {
     event.preventDefault();
@@ -30,7 +71,16 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
     const res = await fetch("/api/conta/requests", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, description, category }),
+      body: JSON.stringify({
+        title,
+        description,
+        category,
+        fileName: fileMeta?.name ?? null,
+        fileSize: fileMeta?.size ?? null,
+        fileSha256: fileMeta?.sha256 ?? null,
+        fileBlobPathname: fileMeta?.pathname ?? null,
+        appVersion: fileMeta ? "1.0.0" : null,
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -39,6 +89,8 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
     }
     setTitle("");
     setDescription("");
+    setFile(null);
+    setFileMeta(null);
     setMessage("Solicitação enviada.");
     router.refresh();
   }
@@ -51,7 +103,9 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
         <input className="field w-full" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" maxLength={120} required />
         <input className="field w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Categoria" maxLength={32} required />
         <textarea className="field w-full" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva sua solicitação" maxLength={4000} required />
-        <button className="btn-primary" type="submit">Enviar solicitação</button>
+        <input className="field w-full" type="file" accept=".AppImage,.tar.zst" onChange={(e) => void handleFileChange(e)} disabled={uploading} />
+        {fileMeta ? <p className="text-xs text-muted">{fileMeta.name} · {fileMeta.size} bytes · SHA-256 conferido</p> : null}
+        <button className="btn-primary" type="submit" disabled={uploading}>{uploading ? "Enviando arquivo…" : "Enviar solicitação"}</button>
         {message ? <p className="text-sm" role="status">{message}</p> : null}
       </form>
       <ul className="mt-6 space-y-3">
