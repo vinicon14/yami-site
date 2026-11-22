@@ -1,23 +1,24 @@
 {
   "produto": "YAMI OS",
   "canal": "estavel",
-  "versao": "0.7.0",
-  "build": "r7",
-  "data": "2026-11-20",
+  "versao": "0.8.0",
+  "build": "r8",
+  "data": "2026-11-21",
   "notas": [
-    "Loja: todos os apps com ícone em pixel art fiel à logo original",
-    "Loja: Grok Bot, Atualizações YAMI OS, Instalar AppImage, Instalar YAMI OS e OpenCode (com status Instalado · Abrir)",
-    "OpenCode 2.3.2 oficial pré-instalado (app desktop + terminal), sem credenciais",
-    "Atualização rápida por pacote (~470 KB) para quem está na 0.6.0; seus dados são mantidos"
+    "Integração com o site YAMI: conta, licença e pedidos dentro do sistema",
+    "Solicitações de melhorias com aprovação administrativa e acompanhamento",
+    "Avisos de aprovação, rejeição e publicação no aplicativo YAMI",
+    "Checkout com validação reforçada e proteção contra pagamentos duplicados",
+    "Atualização rápida por pacote: seus dados, Wi-Fi e aplicativos são mantidos"
   ],
   "pacotes": [
     {
-      "versao": "0.7.0",
-      "deVersaoMinima": "0.6.0",
-      "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.7.0/yami-os-0.7.0-pacote.tar.zst",
-      "sha256": "c9fdc6fa6a0e1616d494295ffcb6e23d6a5f7df60eb8949298284cc8cb3138fd",
-      "tamanho": 477365,
-      "descricao": "Loja nova + ícones pixel art + OpenCode (baixado da release oficial, sha256 conferido)"
+      "versao": "0.8.0",
+      "deVersaoMinima": "0.7.0",
+      "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.8.0/yami-os-0.8.0-pacote.tar.zst",
+      "sha256": "e434778a8b08c9574f7d90c98cc348a00dc19c169c37cbca643995b593efe6d5",
+      "tamanho": 223645,
+      "descricao": "Aplicativo YAMI integrado, solicitações e correções de pagamento"
     }
   ],
   "iso": {
@@ -25,19 +26,8 @@
     "sha256": "ab8ee0bcd7ec59692f36beeeee34b9ee33380938603b55426af1b3946473e5b9",
     "tamanho": 3523215360,
     "kernel": "6.8.0-149-generic",
-    "partes": [
-      {
-        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.7.0/yami-os-0.7.0-r7.iso.parte01",
-        "sha256": "4a97b1d22607889684a2cc6fa211aa1a760ebc8e25d27818deaf02103be93bd9",
-        "tamanho": 1992294400
-      },
-      {
-        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v0.7.0/yami-os-0.7.0-r7.iso.parte02",
-        "sha256": "27937825e056f277701a633c8f0d4a2c2d675f48f2819a2e4c236a5b41b1ab81",
-        "tamanho": 1530920960
-      }
-    ],
-    "observacao": "ISO em 2 partes; baixe todas, confira o sha256 de cada uma e junte (cat parte01 parte02 ... > yami-os-amd64.iso)."
+    "partes": [],
+    "observacao": "ISO 0.8.0 ainda não publicada. O pacote incremental atualiza a 0.7.0 sem perder dados; a ISO 0.7.0 permanece como referência da última imagem completa."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",
