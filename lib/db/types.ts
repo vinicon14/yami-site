@@ -100,6 +100,57 @@ export type ReleaseHistoryEntry = {
   createdAt: string;
 };
 
+export const FEATURE_REQUEST_STATUSES = [
+  "pendente", "aprovada", "rejeitada", "em_desenvolvimento", "publicada", "retirada",
+] as const;
+export type FeatureRequestStatus = (typeof FEATURE_REQUEST_STATUSES)[number];
+
+export type FeatureRequest = {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  category: string;
+  status: FeatureRequestStatus;
+  publishedVersion: string | null;
+  adminNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FeatureRequestEvent = {
+  id: string;
+  requestId: string;
+  fromStatus: FeatureRequestStatus | null;
+  toStatus: FeatureRequestStatus;
+  actorUserId: string;
+  actorRole: "user" | "admin";
+  note: string | null;
+  createdAt: string;
+};
+
+export type UserNotification = {
+  id: string;
+  userId: string;
+  kind: string;
+  title: string;
+  body: string;
+  requestId: string | null;
+  readAt: string | null;
+  createdAt: string;
+  expiresAt: string | null;
+};
+
+export type PaymentEvent = {
+  id: string;
+  orderId: string | null;
+  paymentId: string | null;
+  eventType: "webhook" | "fulfill" | "duplicate" | "match_failed" | "api_error";
+  result: "ok" | "skipped" | "error";
+  reasonCode: string;
+  createdAt: string;
+};
+
 export interface Store {
   createOrder(input: NewOrderInput): Promise<Order>;
   getOrderById(id: string): Promise<Order | null>;
@@ -171,6 +222,18 @@ export interface Store {
   addReleaseHistory(entry: Omit<ReleaseHistoryEntry, "createdAt"> & { createdAt?: string }): Promise<void>;
   listReleaseHistory(kind?: ReleaseKind, limit?: number): Promise<ReleaseHistoryEntry[]>;
   getReleaseHistoryById(id: string): Promise<ReleaseHistoryEntry | null>;
+
+  markPaidOnce(input: { orderId: string; paymentId: string; paidAt?: Date; }): Promise<{ order: Order; changed: boolean } | null>;
+  addPaymentEvent(entry: Omit<PaymentEvent, "createdAt"> & { createdAt?: string }): Promise<void>;
+  createFeatureRequest(input: Omit<FeatureRequest, "id" | "status" | "publishedVersion" | "adminNote" | "createdAt" | "updatedAt">): Promise<FeatureRequest>;
+  listFeatureRequests(userId?: string): Promise<FeatureRequest[]>;
+  getFeatureRequest(id: string): Promise<FeatureRequest | null>;
+  updateFeatureRequest(input: { id: string; userId: string; title: string; description: string; category: string }): Promise<FeatureRequest | null>;
+  transitionFeatureRequest(input: { id: string; actorUserId: string; actorRole: "user" | "admin"; toStatus: FeatureRequestStatus; note?: string | null; publishedVersion?: string | null; }): Promise<FeatureRequest | null>;
+  createUserNotification(input: Omit<UserNotification, "id" | "readAt" | "createdAt"> & { createdAt?: string }): Promise<UserNotification>;
+  listUserNotifications(userId: string, limit?: number): Promise<UserNotification[]>;
+  markNotificationRead(id: string, userId: string): Promise<boolean>;
+  countUnreadNotifications(userId: string): Promise<number>;
 }
 
 

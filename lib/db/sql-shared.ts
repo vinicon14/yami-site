@@ -5,6 +5,10 @@ import { fileURLToPath } from "node:url";
 import type {
   AuditEntry,
   Device,
+  FeatureRequest,
+  FeatureRequestEvent,
+  FeatureRequestStatus,
+  PaymentEvent,
   ReleaseHistoryEntry,
   DownloadTokenRow,
   License,
@@ -13,6 +17,7 @@ import type {
   PairingRow,
   Session,
   User,
+  UserNotification,
 } from "./types";
 
 export const SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS orders (
@@ -139,6 +144,58 @@ CREATE TABLE IF NOT EXISTS release_history (
 );
 
 CREATE INDEX IF NOT EXISTS idx_release_history_kind ON release_history (kind, created_at);
+
+CREATE TABLE IF NOT EXISTS feature_requests (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pendente',
+  published_version TEXT,
+  admin_note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS feature_request_events (
+  id TEXT PRIMARY KEY,
+  request_id TEXT NOT NULL,
+  from_status TEXT,
+  to_status TEXT NOT NULL,
+  actor_user_id TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  request_id TEXT,
+  read_at TEXT,
+  created_at TEXT NOT NULL,
+  expires_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS payment_events (
+  id TEXT PRIMARY KEY,
+  order_id TEXT,
+  payment_id TEXT,
+  event_type TEXT NOT NULL,
+  result TEXT NOT NULL,
+  reason_code TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_feature_requests_user ON feature_requests (user_id, status);
+CREATE INDEX IF NOT EXISTS idx_feature_request_events_request ON feature_request_events (request_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_payment_events_order ON payment_events (order_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_payment_events_payment ON payment_events (payment_id, created_at);
 `;
 
 export function loadSchemaFromFile(): string {
@@ -268,6 +325,60 @@ export function rowToHistory(row: Record<string, unknown>): ReleaseHistoryEntry 
     payload,
     uploadedByEmail: String(row.uploaded_by_email),
     uploadedByUserId: String(row.uploaded_by_user_id),
+    createdAt: String(row.created_at),
+  };
+}
+
+export function rowToFeatureRequest(row: Record<string, unknown>): FeatureRequest {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    title: String(row.title),
+    description: String(row.description),
+    category: String(row.category),
+    status: String(row.status) as FeatureRequestStatus,
+    publishedVersion: row.published_version == null ? null : String(row.published_version),
+    adminNote: row.admin_note == null ? null : String(row.admin_note),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export function rowToFeatureRequestEvent(row: Record<string, unknown>): FeatureRequestEvent {
+  return {
+    id: String(row.id),
+    requestId: String(row.request_id),
+    fromStatus: row.from_status == null ? null : (String(row.from_status) as FeatureRequestStatus),
+    toStatus: String(row.to_status) as FeatureRequestStatus,
+    actorUserId: String(row.actor_user_id),
+    actorRole: String(row.actor_role) as "user" | "admin",
+    note: row.note == null ? null : String(row.note),
+    createdAt: String(row.created_at),
+  };
+}
+
+export function rowToUserNotification(row: Record<string, unknown>): UserNotification {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    kind: String(row.kind),
+    title: String(row.title),
+    body: String(row.body),
+    requestId: row.request_id == null ? null : String(row.request_id),
+    readAt: row.read_at == null ? null : String(row.read_at),
+    createdAt: String(row.created_at),
+    expiresAt: row.expires_at == null ? null : String(row.expires_at),
+  };
+}
+
+export function rowToPaymentEvent(row: Record<string, unknown>): PaymentEvent {
+  return {
+    id: String(row.id),
+    orderId: row.order_id == null ? null : String(row.order_id),
+    paymentId: row.payment_id == null ? null : String(row.payment_id),
+    eventType: String(row.event_type) as PaymentEvent["eventType"],
+    result: String(row.result) as PaymentEvent["result"],
+    reasonCode: String(row.reason_code),
     createdAt: String(row.created_at),
   };
 }

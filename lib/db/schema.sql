@@ -122,3 +122,55 @@ CREATE TABLE IF NOT EXISTS release_history (
 );
 
 CREATE INDEX IF NOT EXISTS idx_release_history_kind ON release_history (kind, created_at);
+
+CREATE TABLE IF NOT EXISTS feature_requests (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pendente',
+  published_version TEXT,
+  admin_note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS feature_request_events (
+  id TEXT PRIMARY KEY,
+  request_id TEXT NOT NULL,
+  from_status TEXT,
+  to_status TEXT NOT NULL,
+  actor_user_id TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  request_id TEXT,
+  read_at TEXT,
+  created_at TEXT NOT NULL,
+  expires_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS payment_events (
+  id TEXT PRIMARY KEY,
+  order_id TEXT,
+  payment_id TEXT,
+  event_type TEXT NOT NULL,
+  result TEXT NOT NULL,
+  reason_code TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_feature_requests_user ON feature_requests (user_id, status);
+CREATE INDEX IF NOT EXISTS idx_feature_request_events_request ON feature_request_events (request_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_payment_events_order ON payment_events (order_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_payment_events_payment ON payment_events (payment_id, created_at);
