@@ -19,7 +19,7 @@ export function AdminRequestsPanel({ items }: { items: FeatureRequest[] }) {
     const res = await fetch(`/api/admin/requests/${id}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ status, note: note[id] ?? "", publishedVersion }),
+      body: JSON.stringify({ status, note: note[id] ?? "", publishedVersion, publish: status === "publicada" }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -40,6 +40,12 @@ export function AdminRequestsPanel({ items }: { items: FeatureRequest[] }) {
             <p className="font-medium">{item.title}</p>
             <p className="mt-1 text-xs text-muted">{item.category} · {statusLabel(item.status)}</p>
             <p className="mt-1 text-sm text-muted">{item.description}</p>
+            {item.fileName ? (
+              <p className="mt-2 text-xs text-muted">
+                Arquivo: {item.fileName} · {item.fileSize ?? 0} bytes · SHA-256 {item.fileSha256 ?? "—"}
+                {item.publishedAssetUrl ? <> · <a className="text-accent-text underline" href={item.publishedAssetUrl}>asset publicado</a></> : null}
+              </p>
+            ) : null}
             <input className="field mt-3 w-full" placeholder="Nota administrativa" value={note[item.id] ?? ""} onChange={(e) => setNote({ ...note, [item.id]: e.target.value })} />
             <div className="mt-3 flex flex-wrap gap-2">
               {item.status === "pendente" ? (
