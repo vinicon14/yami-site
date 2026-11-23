@@ -3,6 +3,7 @@ import { getStore } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { adminFromRequest } from "../../../desktop/_shared";
 import { jsonError } from "@/lib/http";
+import { banPublisher } from "@/lib/store-apps";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,10 +22,20 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const store = await getStore();
   const target = await store.getUserById((await ctx.params).id);
   if (!target) return jsonError("not_found", 404);
-  await store.updateUser(target.id, {
-    status: status as "ativo" | "bloqueado" | undefined,
-    passwordHash: password ? await hashPassword(password) : undefined,
-  });
+  try {
+    if (status === "bloqueado") {
+      await banPublisher(store, target.id, admin.user.id);
+      if (password) await store.updateUser(target.id, { passwordHash: await hashPassword(password) });
+    } else {
+      await store.updateUser(target.id, {
+        status: status as "ativo" | "bloqueado" | undefined,
+        passwordHash: password ? await hashPassword(password) : undefined,
+      });
+    }
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "invalid_request";
+    return jsonError(code, 400);
+  }
   await store.addAudit({
     id: crypto.randomUUID(),
     userId: admin.user.id,

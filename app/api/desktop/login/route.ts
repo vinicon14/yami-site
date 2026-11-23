@@ -37,6 +37,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : "invalid_credentials";
+    if (code === "conta_bloqueada") return jsonError(code, 403);
     return jsonError(code === "invalid_credentials" ? code : "invalid_request", 401);
   }
 }

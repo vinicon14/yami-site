@@ -14,6 +14,7 @@ export async function desktopLogin(
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     throw new Error("invalid_credentials");
   }
+  if (user.status === "bloqueado") throw new Error("conta_bloqueada");
 
   const active = (await store.listDevices(user.id)).filter((d) => !d.revokedAt);
   if (active.length >= MAX_DESKTOP_DEVICES) {
@@ -43,7 +44,7 @@ export async function getDesktopSession(store: Store, deviceToken: string) {
   const device = await store.getDeviceByTokenHash(hashSecret(deviceToken));
   if (!device || device.revokedAt) return null;
   const user = await store.getUserById(device.userId);
-  if (!user) return null;
+  if (!user || user.status === "bloqueado") return null;
   await store.touchDevice(device.id);
   const licenses = await store.getLicensesByEmail(user.email);
   const orders = await store.getOrdersByEmail(user.email);

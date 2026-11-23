@@ -9,6 +9,11 @@ import type {
   FeatureRequestEvent,
   FeatureRequestStatus,
   PaymentEvent,
+  Sha256Source,
+  StoreApp,
+  StoreAppReport,
+  StoreAppVersion,
+  StoreVisibility,
   ReleaseHistoryEntry,
   DownloadTokenRow,
   License,
@@ -166,6 +171,7 @@ CREATE TABLE IF NOT EXISTS feature_requests (
   file_blob_pathname TEXT,
   app_version TEXT,
   app_icon TEXT,
+  app_platform TEXT,
   published_asset_url TEXT,
   published_at TEXT,
   created_at TEXT NOT NULL,
@@ -210,6 +216,52 @@ CREATE INDEX IF NOT EXISTS idx_feature_request_events_request ON feature_request
 CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications (user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_payment_events_order ON payment_events (order_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_payment_events_payment ON payment_events (payment_id, created_at);
+
+CREATE TABLE IF NOT EXISTS store_apps (
+  id TEXT PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  owner_user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  icon TEXT,
+  platform TEXT NOT NULL,
+  visibility TEXT NOT NULL,
+  review_note TEXT,
+  verified INTEGER NOT NULL DEFAULT 0,
+  author_version_id TEXT NOT NULL,
+  public_version_id TEXT,
+  source_request_id TEXT UNIQUE,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS store_app_versions (
+  id TEXT PRIMARY KEY,
+  app_id TEXT NOT NULL,
+  version TEXT NOT NULL,
+  file_name TEXT,
+  file_size INTEGER NOT NULL,
+  file_sha256 TEXT NOT NULL,
+  sha256_source TEXT NOT NULL,
+  file_blob_pathname TEXT,
+  external_url TEXT,
+  download_url TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS store_app_reports (
+  id TEXT PRIMARY KEY,
+  app_id TEXT NOT NULL,
+  reporter_user_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_store_apps_owner ON store_apps (owner_user_id, visibility);
+CREATE INDEX IF NOT EXISTS idx_store_app_versions_app ON store_app_versions (app_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_store_app_reports_status ON store_app_reports (status, created_at);
 `;
 
 export function loadSchemaFromFile(): string {
@@ -366,10 +418,68 @@ export function rowToFeatureRequest(row: Record<string, unknown>): FeatureReques
     fileBlobPathname: row.file_blob_pathname == null ? null : String(row.file_blob_pathname),
     appVersion: row.app_version == null ? null : String(row.app_version),
     appIcon: row.app_icon == null ? null : String(row.app_icon),
+    appPlatform: row.app_platform === "windows" ? "windows" : "linux",
     publishedAssetUrl: row.published_asset_url == null ? null : String(row.published_asset_url),
     publishedAt: row.published_at == null ? null : String(row.published_at),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
+  };
+}
+
+function asVisibility(value: unknown): StoreVisibility {
+  if (value === "em_revisao" || value === "publico" || value === "retirado" || value === "privado") return value;
+  return "privado";
+}
+
+function asShaSource(value: unknown): Sha256Source {
+  return value === "declarado" ? "declarado" : "servidor";
+}
+
+export function rowToStoreApp(row: Record<string, unknown>): StoreApp {
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    ownerUserId: String(row.owner_user_id),
+    name: String(row.name),
+    description: String(row.description),
+    category: String(row.category),
+    icon: row.icon == null ? null : String(row.icon),
+    platform: row.platform === "windows" ? "windows" : "linux",
+    visibility: asVisibility(row.visibility),
+    reviewNote: row.review_note == null ? null : String(row.review_note),
+    verified: Number(row.verified) === 1,
+    authorVersionId: String(row.author_version_id),
+    publicVersionId: row.public_version_id == null ? null : String(row.public_version_id),
+    sourceRequestId: row.source_request_id == null ? null : String(row.source_request_id),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export function rowToStoreAppVersion(row: Record<string, unknown>): StoreAppVersion {
+  return {
+    id: String(row.id),
+    appId: String(row.app_id),
+    version: String(row.version),
+    fileName: row.file_name == null ? null : String(row.file_name),
+    fileSize: Number(row.file_size),
+    fileSha256: String(row.file_sha256),
+    sha256Source: asShaSource(row.sha256_source),
+    fileBlobPathname: row.file_blob_pathname == null ? null : String(row.file_blob_pathname),
+    externalUrl: row.external_url == null ? null : String(row.external_url),
+    downloadUrl: row.download_url == null ? null : String(row.download_url),
+    createdAt: String(row.created_at),
+  };
+}
+
+export function rowToStoreAppReport(row: Record<string, unknown>): StoreAppReport {
+  return {
+    id: String(row.id),
+    appId: String(row.app_id),
+    reporterUserId: String(row.reporter_user_id),
+    reason: String(row.reason),
+    status: row.status === "resolvida" ? "resolvida" : "aberta",
+    createdAt: String(row.created_at),
   };
 }
 

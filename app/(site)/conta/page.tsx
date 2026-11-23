@@ -3,6 +3,7 @@ import { getStore } from "@/lib/db";
 import { toPublicFeatureRequest } from "@/lib/feature-requests";
 import { AccountPanel } from "@/components/AccountPanel";
 import { FeatureRequestsPanel } from "@/components/FeatureRequestsPanel";
+import { MeusAppsPanel } from "@/components/MeusAppsPanel";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -61,6 +62,7 @@ export default async function ContaPage() {
           meta: a.meta,
         }))}
       />
+      <MeusAppsPanel />
       <FeatureRequestsPanel items={requests.map(toPublicFeatureRequest)} />
     </article>
   );

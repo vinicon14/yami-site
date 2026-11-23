@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStore } from "@/lib/db";
 import { transitionRequest } from "@/lib/feature-requests";
 import { publishAppToGitHub } from "@/lib/github-apps";
+import { approveStoreApp, migrateLegacyAppRequests } from "@/lib/store-apps";
 import { adminFromRequest, jsonError } from "../../../desktop/_shared";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,26 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const version = String(body.publishedVersion ?? "").trim();
     if (!/^\d+\.\d+\.\d+$/.test(version)) return jsonError("versao_publicacao_invalida", 400);
     try {
+      await migrateLegacyAppRequests(store);
+      const linked = await store.getStoreAppBySourceRequest(current.id);
+      if (linked && linked.visibility !== "retirado") {
+        const app = await approveStoreApp(store, {
+          appId: linked.id,
+          adminUserId: admin.user.id,
+          note: body.note == null ? null : String(body.note),
+          force: true,
+        });
+        const item = await transitionRequest(store, {
+          id,
+          actorUserId: admin.user.id,
+          actorRole: "admin",
+          toStatus: "publicada",
+          note: body.note == null ? null : String(body.note),
+          publishedVersion: version,
+          publishedAssetUrl: app.publicVersionId ? (await store.getStoreAppVersion(app.publicVersionId))?.downloadUrl ?? null : null,
+        });
+        return NextResponse.json({ ok: true, item, app });
+      }
       const published = await publishAppToGitHub({
         requestId: current.id,
         fileName: current.fileName,
@@ -37,6 +58,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         description: current.description,
         category: current.category,
         icon: current.appIcon,
+        platform: current.appPlatform === "windows" ? "windows" : "linux",
+        externalUrl: current.appPlatform === "windows" ? current.publishedAssetUrl : null,
       });
       const item = await transitionRequest(store, {
         id,

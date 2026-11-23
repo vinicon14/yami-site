@@ -81,33 +81,48 @@ export async function publishAppToGitHub(input: {
   description: string;
   category: string;
   icon: string | null;
+  platform?: "linux" | "windows";
+  externalUrl?: string | null;
+  publisherName?: string | null;
+  badge?: string | null;
+  verified?: boolean;
 }) {
-  const blob = await get(input.blobPathname, { access: "private" });
-  if (!blob?.stream) throw new Error("blob_indisponivel");
-  const dir = join(tmpdir(), `yami-app-${randomBytes(8).toString("hex")}`);
-  await mkdir(dir, { recursive: true });
-  const tempFile = join(dir, input.fileName);
-  const hash = createHash("sha256");
-  const hasher = new Transform({
-    transform(chunk, _encoding, callback) {
-      hash.update(chunk);
-      callback(null, chunk);
-    },
-  });
-  await pipeline(Readable.fromWeb(blob.stream as any), hasher, createWriteStream(tempFile));
-  const actualSha = hash.digest("hex");
-  const { statSync } = await import("node:fs");
-  const actualSize = statSync(tempFile).size;
-  if (actualSha !== input.sha256.toLowerCase() || actualSize !== input.size) {
-    await unlink(tempFile).catch(() => undefined);
-    throw new Error("hash_ou_tamanho_divergente");
+  const platform = input.platform === "windows" ? "windows" : "linux";
+  const external = platform === "windows" ? input.externalUrl : null;
+  let release: any;
+  let downloadUrl: string;
+  let tempFile: string | null = null;
+  if (external) {
+    release = await getRelease();
+    downloadUrl = external;
+  } else {
+    const blob = await get(input.blobPathname, { access: "private" });
+    if (!blob?.stream) throw new Error("blob_indisponivel");
+    const dir = join(tmpdir(), `yami-app-${randomBytes(8).toString("hex")}`);
+    await mkdir(dir, { recursive: true });
+    tempFile = join(dir, input.fileName);
+    const hash = createHash("sha256");
+    const hasher = new Transform({
+      transform(chunk, _encoding, callback) {
+        hash.update(chunk);
+        callback(null, chunk);
+      },
+    });
+    await pipeline(Readable.fromWeb(blob.stream as any), hasher, createWriteStream(tempFile));
+    const actualSha = hash.digest("hex");
+    const { statSync } = await import("node:fs");
+    const actualSize = statSync(tempFile).size;
+    if (actualSha !== input.sha256.toLowerCase() || actualSize !== input.size) {
+      await unlink(tempFile).catch(() => undefined);
+      throw new Error("hash_ou_tamanho_divergente");
+    }
+    release = await getRelease();
+    const assetName = `${input.requestId}-${input.fileName}`;
+    await deleteAsset(release, assetName);
+    const uploadStream = Readable.toWeb(createReadStream(tempFile)) as ReadableStream;
+    const asset = await uploadAsset(release, assetName, "application/octet-stream", uploadStream, actualSize);
+    downloadUrl = asset.browser_download_url;
   }
-
-  const release = await getRelease();
-  const assetName = `${input.requestId}-${input.fileName}`;
-  await deleteAsset(release, assetName);
-  const uploadStream = Readable.toWeb(createReadStream(tempFile)) as ReadableStream;
-  const asset = await uploadAsset(release, assetName, "application/octet-stream", uploadStream, actualSize);
 
   const manifestAsset = release.assets?.find((a: any) => a.name === MANIFEST_ASSET);
   let manifest: { version: string; publishedAt: string; apps: any[] } = {
@@ -133,10 +148,15 @@ export async function publishAppToGitHub(input: {
     category: input.category,
     version: input.version,
     icon: input.icon,
-    platform: "linux",
+    platform,
     sha256: input.sha256.toLowerCase(),
     size: input.size,
-    downloadUrl: asset.browser_download_url,
+    downloadUrl,
+    externalUrl: external,
+    publisher: input.publisherName ?? null,
+    badge: input.badge ?? "nao_verificado",
+    verified: input.verified === true,
+    actionLabel: platform === "windows" ? "Baixar para Windows" : "Instalar",
     publishedAt: manifest.publishedAt,
   });
   await deleteAsset(release, MANIFEST_ASSET);
@@ -144,6 +164,36 @@ export async function publishAppToGitHub(input: {
   const manifestStream = Readable.toWeb(Readable.from(manifestBuffer)) as any;
   await uploadAsset(release, MANIFEST_ASSET, "application/json", manifestStream, manifestBuffer.length);
 
-  await unlink(tempFile).catch(() => undefined);
-  return { assetUrl: asset.browser_download_url, manifestUrl: `https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/${MANIFEST_ASSET}` };
+  if (tempFile) await unlink(tempFile).catch(() => undefined);
+  return { assetUrl: downloadUrl, manifestUrl: `https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/${MANIFEST_ASSET}` };
+}
+
+export async function removePublishedApp(appId: string): Promise<void> {
+  const release = await getRelease();
+  for (const asset of release.assets ?? []) {
+    if (typeof asset?.name === "string" && asset.name.startsWith(`${appId}-`)) {
+      await deleteAsset(release, asset.name);
+    }
+  }
+  const fresh = await getRelease();
+  const manifestAsset = fresh.assets?.find((a: any) => a.name === MANIFEST_ASSET);
+  let manifest: { version: string; publishedAt: string; apps: any[] } = {
+    version: "1",
+    publishedAt: new Date().toISOString(),
+    apps: [],
+  };
+  if (manifestAsset?.browser_download_url) {
+    try {
+      const res = await fetch(manifestAsset.browser_download_url);
+      if (res.ok) manifest = await res.json();
+    } catch {
+      manifest.apps = [];
+    }
+  }
+  manifest.publishedAt = new Date().toISOString();
+  manifest.apps = (manifest.apps ?? []).filter((app: any) => app.id !== appId);
+  await deleteAsset(fresh, MANIFEST_ASSET);
+  const manifestBuffer = Buffer.from(JSON.stringify(manifest, null, 2));
+  const manifestStream = Readable.toWeb(Readable.from(manifestBuffer)) as any;
+  await uploadAsset(fresh, MANIFEST_ASSET, "application/json", manifestStream, manifestBuffer.length);
 }

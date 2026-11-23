@@ -127,10 +127,58 @@ export type FeatureRequest = {
   fileBlobPathname: string | null;
   appVersion: string | null;
   appIcon: string | null;
+  /** linux instala no YAMI OS; windows é download externo. Ausente no banco antigo vira linux. */
+  appPlatform: "linux" | "windows";
   publishedAssetUrl: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AppPlatform = "linux" | "windows";
+export type StoreVisibility = "privado" | "em_revisao" | "publico" | "retirado";
+export type Sha256Source = "servidor" | "declarado";
+
+export type StoreApp = {
+  id: string;
+  slug: string;
+  ownerUserId: string;
+  name: string;
+  description: string;
+  category: string;
+  icon: string | null;
+  platform: AppPlatform;
+  visibility: StoreVisibility;
+  reviewNote: string | null;
+  verified: boolean;
+  authorVersionId: string;
+  publicVersionId: string | null;
+  sourceRequestId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StoreAppVersion = {
+  id: string;
+  appId: string;
+  version: string;
+  fileName: string | null;
+  fileSize: number;
+  fileSha256: string;
+  sha256Source: Sha256Source;
+  fileBlobPathname: string | null;
+  externalUrl: string | null;
+  downloadUrl: string | null;
+  createdAt: string;
+};
+
+export type StoreAppReport = {
+  id: string;
+  appId: string;
+  reporterUserId: string;
+  reason: string;
+  status: "aberta" | "resolvida";
+  createdAt: string;
 };
 
 export type FeatureRequestEvent = {
@@ -244,11 +292,24 @@ export interface Store {
 
   markPaidOnce(input: { orderId: string; paymentId: string; paidAt?: Date; }): Promise<{ order: Order; changed: boolean } | null>;
   addPaymentEvent(entry: Omit<PaymentEvent, "createdAt"> & { createdAt?: string }): Promise<void>;
-  createFeatureRequest(input: Omit<FeatureRequest, "id" | "status" | "publishedVersion" | "adminNote" | "createdAt" | "updatedAt">): Promise<FeatureRequest>;
+  createFeatureRequest(input: Omit<FeatureRequest, "id" | "status" | "publishedVersion" | "adminNote" | "createdAt" | "updatedAt" | "appPlatform"> & { appPlatform?: "linux" | "windows" | null }): Promise<FeatureRequest>;
   listFeatureRequests(userId?: string): Promise<FeatureRequest[]>;
   getFeatureRequest(id: string): Promise<FeatureRequest | null>;
   updateFeatureRequest(input: { id: string; userId: string; title: string; description: string; category: string }): Promise<FeatureRequest | null>;
   transitionFeatureRequest(input: { id: string; actorUserId: string; actorRole: "user" | "admin"; toStatus: FeatureRequestStatus; note?: string | null; publishedVersion?: string | null; publishedAssetUrl?: string | null; }): Promise<FeatureRequest | null>;
+  createStoreApp(app: StoreApp): Promise<StoreApp>;
+  updateStoreApp(id: string, patch: Partial<Pick<StoreApp, "name" | "description" | "category" | "icon" | "platform" | "visibility" | "reviewNote" | "verified" | "authorVersionId" | "publicVersionId" | "updatedAt">>): Promise<StoreApp | null>;
+  getStoreApp(id: string): Promise<StoreApp | null>;
+  getStoreAppBySlug(slug: string): Promise<StoreApp | null>;
+  getStoreAppBySourceRequest(requestId: string): Promise<StoreApp | null>;
+  listStoreApps(): Promise<StoreApp[]>;
+  addStoreAppVersion(version: StoreAppVersion): Promise<StoreAppVersion>;
+  updateStoreAppVersion(id: string, patch: { downloadUrl?: string | null }): Promise<StoreAppVersion | null>;
+  getStoreAppVersion(id: string): Promise<StoreAppVersion | null>;
+  listStoreAppVersions(appId: string): Promise<StoreAppVersion[]>;
+  createStoreAppReport(report: StoreAppReport): Promise<StoreAppReport>;
+  listStoreAppReports(appId?: string): Promise<StoreAppReport[]>;
+  resolveStoreAppReports(appId: string): Promise<void>;
   createUserNotification(input: Omit<UserNotification, "id" | "readAt" | "createdAt"> & { createdAt?: string }): Promise<UserNotification>;
   listUserNotifications(userId: string, limit?: number): Promise<UserNotification[]>;
   markNotificationRead(id: string, userId: string): Promise<boolean>;
