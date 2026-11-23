@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createMemoryStore } from "../lib/db/memory";
 import { hashPassword } from "../lib/auth";
 import { hashSecret } from "../lib/auth";
@@ -26,6 +26,19 @@ describe("pareamento por e-mail", () => {
     const confirmed = await confirmPairingByEmail(store, started.confirmToken, "u1");
     expect(confirmed.deviceToken).toMatch(/^[a-f0-9]{64}$/);
     expect(await store.getDeviceByTokenHash(hashSecret(confirmed.deviceToken)).then((d) => d?.name)).toBe("PC de casa");
+  });
+
+  it("rejeita token expirado depois de 10 minutos", async () => {
+    vi.useFakeTimers();
+    try {
+      const store = createMemoryStore();
+      await seed(store);
+      const started = await startPairingByEmail(store, "u@example.com", "PC de casa");
+      vi.setSystemTime(Date.now() + 11 * 60 * 1000);
+      await expect(confirmPairingByEmail(store, started.confirmToken, "u1")).rejects.toThrow("token expirado");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("rejeita token usado duas vezes", async () => {
