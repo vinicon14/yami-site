@@ -7,6 +7,11 @@ describe("validação de app", () => {
     expect(validateAppFile({ name: "app.tar.zst", size: 1000, sha256: "a".repeat(64) })).toEqual({ ok: true });
   });
 
+  it("aceita instalador Windows quando a plataforma é windows", () => {
+    expect(validateAppFile({ name: "app.exe", size: 1000, sha256: "a".repeat(64), platform: "windows" })).toEqual({ ok: true });
+    expect(validateAppFile({ name: "app.msi", size: 1000, sha256: "b".repeat(64), platform: "windows" }).ok).toBe(true);
+  });
+
   it("rejeita formato, tamanho ou hash inválidos", () => {
     expect(validateAppFile({ name: "app.exe", size: 1000, sha256: "a".repeat(64) }).ok).toBe(false);
     expect(validateAppFile({ name: "app.AppImage", size: 600 * 1024 * 1024, sha256: "a".repeat(64) }).ok).toBe(false);

@@ -3,7 +3,6 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getStore } from "@/lib/db";
 import { getSessionUser, readSessionCookie } from "@/lib/auth";
 import { desktopSession } from "@/app/api/desktop/_shared";
-import { userHasPaidLicense } from "@/lib/license-gate";
 import { clientIp, jsonError, sameOrigin } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { validateAppFile } from "@/lib/app-submissions";
@@ -24,7 +23,8 @@ export async function POST(req: Request) {
   if (!current) return jsonError("não autenticado", 401);
   if (!sameOrigin(req)) return jsonError("origem inválida", 403);
   const store = await getStore();
-  if (!(await userHasPaidLicense(current.email, store))) return jsonError("licença necessária", 403);
+  const account = await store.getUserById(current.userId);
+  if (account?.status === "bloqueado") return jsonError("conta bloqueada", 403);
   const limited = rateLimit(`app-upload:${current.userId}`, 20, 60 * 60 * 1000);
   if (!limited.ok) return jsonError("muitas tentativas", 429);
 
@@ -37,7 +37,12 @@ export async function POST(req: Request) {
       body,
       onBeforeGenerateToken: async (_pathname, clientPayload) => {
         const raw = JSON.parse(clientPayload ?? "{}");
-        const check = validateAppFile({ name: raw.filename, size: raw.size, sha256: raw.sha256 });
+        const check = validateAppFile({
+          name: raw.filename,
+          size: raw.size,
+          sha256: raw.sha256,
+          platform: raw.platform === "windows" ? "windows" : "linux",
+        });
         if (!check.ok) throw new Error(check.reason);
         return {
           allowedContentTypes: ["application/octet-stream", "application/x-executable"],

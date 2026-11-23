@@ -23,7 +23,6 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("geral");
-  const [file, setFile] = useState<File | null>(null);
   const [fileMeta, setFileMeta] = useState<{ name: string; size: number; sha256: string; pathname: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -35,7 +34,6 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const selected = event.target.files?.[0] ?? null;
-    setFile(selected);
     setFileMeta(null);
     if (!selected) return;
     const sha256 = await sha256File(selected);
@@ -58,7 +56,6 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
       setFileMeta({ name: selected.name, size: selected.size, sha256, pathname: uploaded.pathname });
       setMessage("Arquivo enviado. Envie a solicitação.");
     } catch (error) {
-      setFile(null);
       setMessage(error instanceof Error ? error.message : "Não foi possível enviar o arquivo.");
     } finally {
       setUploading(false);
@@ -89,7 +86,6 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
     }
     setTitle("");
     setDescription("");
-    setFile(null);
     setFileMeta(null);
     setMessage("Solicitação enviada.");
     router.refresh();
@@ -98,7 +94,7 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
   return (
     <section className="mt-12">
       <h2 className="text-2xl font-semibold">Solicitações</h2>
-      <p className="mt-2 text-sm text-muted">Envie ideias e acompanhe a aprovação. Somente a equipe YAMI publica alterações.</p>
+      <p className="mt-2 text-sm text-muted">Envie ideias e acompanhe a aprovação. Para publicar um app na loja, use Meus apps: ele fica disponível para você na hora e só vai para todo mundo depois da revisão.</p>
       <form onSubmit={create} className="card mt-4 space-y-3 p-4">
         <input className="field w-full" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" maxLength={120} required />
         <input className="field w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Categoria" maxLength={32} required />

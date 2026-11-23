@@ -33,6 +33,7 @@ export async function POST(req: Request) {
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return jsonError("e-mail ou senha inválidos", 401);
   }
+  if (user.status === "bloqueado") return jsonError("conta bloqueada", 403);
   await store.addAudit({
     id: crypto.randomUUID(),
     userId: user.id,
