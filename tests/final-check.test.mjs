@@ -39,10 +39,10 @@ describe("verificação final 0.8.0", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("manifesto do site aponta para o pacote 0.8.0", () => {
+  it("manifesto do site aponta para o pacote 1.0.0", () => {
     const manifest = JSON.parse(readFileSync(join(root, "lib/yamios/latest.json"), "utf8"));
-    expect(manifest.versao).toBe("0.8.0");
+    expect(manifest.versao).toBe("1.0.0");
     expect(manifest.pacotes[0].sha256).toMatch(/^[a-f0-9]{64}$/);
-    expect(manifest.pacotes[0].deVersaoMinima).toBe("0.7.0");
+    expect(manifest.pacotes[0].deVersaoMinima).toBe("0.8.0");
   });
 });
