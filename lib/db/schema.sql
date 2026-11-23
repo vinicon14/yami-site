@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS feature_requests (
   file_blob_pathname TEXT,
   app_version TEXT,
   app_icon TEXT,
+  app_platform TEXT,
   published_asset_url TEXT,
   published_at TEXT,
   created_at TEXT NOT NULL,
@@ -188,3 +189,64 @@ CREATE INDEX IF NOT EXISTS idx_feature_request_events_request ON feature_request
 CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications (user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_payment_events_order ON payment_events (order_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_payment_events_payment ON payment_events (payment_id, created_at);
+
+CREATE TABLE IF NOT EXISTS store_apps (
+  id TEXT PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  owner_user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  icon TEXT,
+  platform TEXT NOT NULL,
+  visibility TEXT NOT NULL,
+  review_note TEXT,
+  verified INTEGER NOT NULL DEFAULT 0,
+  author_version_id TEXT NOT NULL,
+  public_version_id TEXT,
+  source_request_id TEXT UNIQUE,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS store_app_versions (
+  id TEXT PRIMARY KEY,
+  app_id TEXT NOT NULL,
+  version TEXT NOT NULL,
+  file_name TEXT,
+  file_size INTEGER NOT NULL,
+  file_sha256 TEXT NOT NULL,
+  sha256_source TEXT NOT NULL,
+  file_blob_pathname TEXT,
+  external_url TEXT,
+  download_url TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS store_app_reports (
+  id TEXT PRIMARY KEY,
+  app_id TEXT NOT NULL,
+  reporter_user_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_store_apps_owner ON store_apps (owner_user_id, visibility);
+CREATE INDEX IF NOT EXISTS idx_store_app_versions_app ON store_app_versions (app_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_store_app_reports_status ON store_app_reports (status, created_at);
+
+CREATE TABLE IF NOT EXISTS upload_quota (
+  user_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  bytes BIGINT NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS signup_ip_quota (
+  ip TEXT NOT NULL,
+  day TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  PRIMARY KEY (ip, day)
+);

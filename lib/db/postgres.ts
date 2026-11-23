@@ -1,5 +1,11 @@
 import { parseReleaseManifest } from "../release";
 import type { ReleaseManifest } from "../release";
+import {
+  assertSignupIpQuotaInput,
+  assertUploadQuotaInput,
+  signupQuotaFromRow,
+  uploadQuotaFromRow,
+} from "./quota";
 import type { NewOrderInput, Order, Store } from "./types";
 import { nowIso } from "./types";
 import {
@@ -8,6 +14,9 @@ import {
   rowToDevice,
   rowToFeatureRequest,
   rowToLicense,
+  rowToStoreApp,
+  rowToStoreAppReport,
+  rowToStoreAppVersion,
   rowToOrder,
   rowToPairing,
   rowToSession,
@@ -47,6 +56,11 @@ ALTER TABLE pairings ADD COLUMN IF NOT EXISTS email_sent_at TEXT;
 ALTER TABLE pairings ADD COLUMN IF NOT EXISTS confirmed_at TEXT;
 `;
 
+/** Migração aditiva. ADD COLUMN IF NOT EXISTS não recria a tabela nem apaga linhas. */
+const POSTGRES_APP_PLATFORM = `
+ALTER TABLE feature_requests ADD COLUMN IF NOT EXISTS app_platform TEXT;
+`;
+
 export async function getPostgresClient(url: string): Promise<Sql> {
   if (clientSingleton && clientSingleton.url === url) return clientSingleton.sql;
   const postgres = (await import("postgres")).default;
@@ -79,6 +93,7 @@ export async function getPostgresStore(url: string): Promise<Store> {
 async function ensureSchema(sql: Sql): Promise<void> {
   await sql.unsafe(SCHEMA_SQL);
   await sql.unsafe(POSTGRES_PAIRING_EMAIL_COLUMNS);
+  await sql.unsafe(POSTGRES_APP_PLATFORM);
   try {
     await sql.unsafe(POSTGRES_RELAY_JSONB);
   } catch (err) {
@@ -440,8 +455,14 @@ function wrap(sql: Sql): Store {
       const id = crypto.randomUUID();
       await sql`
         INSERT INTO feature_requests
-          (id, user_id, title, description, category, status, published_version, admin_note, created_at, updated_at)
-        VALUES (${id}, ${input.userId}, ${input.title}, ${input.description}, ${input.category}, 'pendente', NULL, NULL, ${now}, ${now})
+          (id, user_id, title, description, category, status, published_version, admin_note,
+           file_name, file_size, file_sha256, file_blob_pathname, app_version, app_icon, app_platform,
+           published_asset_url, published_at, created_at, updated_at)
+        VALUES (${id}, ${input.userId}, ${input.title}, ${input.description}, ${input.category},
+                'pendente', NULL, NULL, ${input.fileName ?? null}, ${input.fileSize ?? null},
+                ${input.fileSha256 ?? null}, ${input.fileBlobPathname ?? null}, ${input.appVersion ?? null},
+                ${input.appIcon ?? null}, ${input.appPlatform === "windows" ? "windows" : "linux"},
+                NULL, NULL, ${now}, ${now})
       `;
       return (await this.getFeatureRequest(id))!;
     },
@@ -526,6 +547,135 @@ function wrap(sql: Sql): Store {
     async countUnreadNotifications(userId) {
       const rows = await sql`SELECT COUNT(*)::int AS n FROM user_notifications WHERE user_id = ${userId} AND read_at IS NULL`;
       return Number((one(rows) as { n: number } | null)?.n ?? 0);
+    },
+
+    async createStoreApp(app) {
+      await sql`
+        INSERT INTO store_apps
+          (id, slug, owner_user_id, name, description, category, icon, platform, visibility, review_note,
+           verified, author_version_id, public_version_id, source_request_id, created_at, updated_at)
+        VALUES (${app.id}, ${app.slug}, ${app.ownerUserId}, ${app.name}, ${app.description}, ${app.category},
+                ${app.icon}, ${app.platform}, ${app.visibility}, ${app.reviewNote}, ${app.verified ? 1 : 0},
+                ${app.authorVersionId}, ${app.publicVersionId}, ${app.sourceRequestId}, ${app.createdAt}, ${app.updatedAt})
+      `;
+      return (await this.getStoreApp(app.id))!;
+    },
+
+    async updateStoreApp(id, patch) {
+      const current = await this.getStoreApp(id);
+      if (!current) return null;
+      const next = { ...current, ...patch, updatedAt: patch.updatedAt ?? nowIso() };
+      await sql`
+        UPDATE store_apps SET name = ${next.name}, description = ${next.description}, category = ${next.category},
+          icon = ${next.icon}, platform = ${next.platform}, visibility = ${next.visibility},
+          review_note = ${next.reviewNote}, verified = ${next.verified ? 1 : 0},
+          author_version_id = ${next.authorVersionId}, public_version_id = ${next.publicVersionId},
+          updated_at = ${next.updatedAt}
+        WHERE id = ${id}
+      `;
+      return this.getStoreApp(id);
+    },
+
+    async getStoreApp(id) {
+      const rows = await sql`SELECT * FROM store_apps WHERE id = ${id}`;
+      const row = one(rows);
+      return row ? rowToStoreApp(row) : null;
+    },
+
+    async getStoreAppBySlug(slug) {
+      const rows = await sql`SELECT * FROM store_apps WHERE slug = ${slug}`;
+      const row = one(rows);
+      return row ? rowToStoreApp(row) : null;
+    },
+
+    async getStoreAppBySourceRequest(requestId) {
+      const rows = await sql`SELECT * FROM store_apps WHERE source_request_id = ${requestId}`;
+      const row = one(rows);
+      return row ? rowToStoreApp(row) : null;
+    },
+
+    async listStoreApps() {
+      const rows = await sql`SELECT * FROM store_apps ORDER BY created_at DESC`;
+      return rows.map((row) => rowToStoreApp(row as Record<string, unknown>));
+    },
+
+    async addStoreAppVersion(version) {
+      await sql`
+        INSERT INTO store_app_versions
+          (id, app_id, version, file_name, file_size, file_sha256, sha256_source, file_blob_pathname, external_url, download_url, created_at)
+        VALUES (${version.id}, ${version.appId}, ${version.version}, ${version.fileName}, ${version.fileSize},
+                ${version.fileSha256}, ${version.sha256Source}, ${version.fileBlobPathname}, ${version.externalUrl},
+                ${version.downloadUrl}, ${version.createdAt})
+      `;
+      return (await this.getStoreAppVersion(version.id))!;
+    },
+
+    async updateStoreAppVersion(id, patch) {
+      const current = await this.getStoreAppVersion(id);
+      if (!current) return null;
+      const downloadUrl = patch.downloadUrl === undefined ? current.downloadUrl : patch.downloadUrl;
+      await sql`UPDATE store_app_versions SET download_url = ${downloadUrl} WHERE id = ${id}`;
+      return this.getStoreAppVersion(id);
+    },
+
+    async getStoreAppVersion(id) {
+      const rows = await sql`SELECT * FROM store_app_versions WHERE id = ${id}`;
+      const row = one(rows);
+      return row ? rowToStoreAppVersion(row) : null;
+    },
+
+    async listStoreAppVersions(appId) {
+      const rows = await sql`SELECT * FROM store_app_versions WHERE app_id = ${appId} ORDER BY created_at`;
+      return rows.map((row) => rowToStoreAppVersion(row as Record<string, unknown>));
+    },
+
+    async createStoreAppReport(report) {
+      await sql`
+        INSERT INTO store_app_reports (id, app_id, reporter_user_id, reason, status, created_at)
+        VALUES (${report.id}, ${report.appId}, ${report.reporterUserId}, ${report.reason}, ${report.status}, ${report.createdAt})
+      `;
+      return { ...report };
+    },
+
+    async listStoreAppReports(appId) {
+      const rows = appId
+        ? await sql`SELECT * FROM store_app_reports WHERE app_id = ${appId} ORDER BY created_at DESC`
+        : await sql`SELECT * FROM store_app_reports ORDER BY created_at DESC`;
+      return rows.map((row) => rowToStoreAppReport(row as Record<string, unknown>));
+    },
+
+    async resolveStoreAppReports(appId) {
+      await sql`UPDATE store_app_reports SET status = 'resolvida' WHERE app_id = ${appId} AND status = 'aberta'`;
+    },
+
+    async consumeUploadQuota(input) {
+      assertUploadQuotaInput(input);
+      const rows = await sql`
+        INSERT INTO upload_quota (user_id, day, count, bytes)
+        SELECT ${input.userId}, ${input.day}, 1, ${input.bytes}
+        WHERE ${input.bytes} <= ${input.maxBytes} AND 1 <= ${input.maxCount}
+        ON CONFLICT (user_id, day) DO UPDATE
+        SET count = upload_quota.count + 1,
+            bytes = upload_quota.bytes + EXCLUDED.bytes
+        WHERE upload_quota.count + 1 <= ${input.maxCount}
+          AND upload_quota.bytes + EXCLUDED.bytes <= ${input.maxBytes}
+        RETURNING count, bytes
+      `;
+      return uploadQuotaFromRow(one(rows) as { count: number | string; bytes: number | string } | null);
+    },
+
+    async consumeSignupIpQuota(input) {
+      assertSignupIpQuotaInput(input);
+      const rows = await sql`
+        INSERT INTO signup_ip_quota (ip, day, count)
+        SELECT ${input.ip}, ${input.day}, 1
+        WHERE 1 <= ${input.maxCount}
+        ON CONFLICT (ip, day) DO UPDATE
+        SET count = signup_ip_quota.count + 1
+        WHERE signup_ip_quota.count + 1 <= ${input.maxCount}
+        RETURNING count
+      `;
+      return signupQuotaFromRow(one(rows) as { count: number | string } | null);
     },
   };
 }

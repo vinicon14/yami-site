@@ -152,6 +152,37 @@ export function getResendApiKey(): string {
 
 export type RelayProvider = "memory" | "postgres" | "ably" | "pusher";
 
+/** Envios (upload de token + POST /api/apps) por usuário no dia UTC. */
+export const DEFAULT_UPLOAD_QUOTA_DAILY_MAX = 10;
+/** 2 GiB. Cabe em inteiro seguro; no Postgres a coluna é BIGINT. */
+export const DEFAULT_UPLOAD_QUOTA_DAILY_BYTES = 2147483648;
+/**
+ * Contas criadas por IP no dia UTC. 5 deixa uma rede compartilhada abrir
+ * algumas contas e corta o atalho de criar uma conta nova para cada envio.
+ */
+export const DEFAULT_SIGNUP_IP_DAILY_MAX = 5;
+
+function readNonNegativeInt(name: string, fallback: number): number {
+  const raw = readEnv(name);
+  if (!raw) return fallback;
+  if (!/^\d+$/.test(raw)) throw new Error(`${name} inválido`);
+  const n = Number(raw);
+  if (!Number.isSafeInteger(n)) throw new Error(`${name} inválido`);
+  return n;
+}
+
+export function getUploadQuotaDailyMax(): number {
+  return readNonNegativeInt("UPLOAD_QUOTA_DAILY_MAX", DEFAULT_UPLOAD_QUOTA_DAILY_MAX);
+}
+
+export function getUploadQuotaDailyBytes(): number {
+  return readNonNegativeInt("UPLOAD_QUOTA_DAILY_BYTES", DEFAULT_UPLOAD_QUOTA_DAILY_BYTES);
+}
+
+export function getSignupIpDailyMax(): number {
+  return readNonNegativeInt("SIGNUP_IP_DAILY_MAX", DEFAULT_SIGNUP_IP_DAILY_MAX);
+}
+
 export function getRelayProvider(): RelayProvider {
   const raw = readEnv("RELAY_PROVIDER", "memory").toLowerCase();
   if (raw === "postgres" || raw === "ably" || raw === "pusher") return raw;

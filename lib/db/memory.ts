@@ -1,4 +1,5 @@
 import type { ReleaseKind, ReleaseManifest } from "../release";
+import { assertSignupIpQuotaInput, assertUploadQuotaInput } from "./quota";
 import type {
   AuditEntry,
   Device,
@@ -10,6 +11,9 @@ import type {
   PairingRow,
   Session,
   Store,
+  StoreApp,
+  StoreAppReport,
+  StoreAppVersion,
   User,
 } from "./types";
 import { nowIso } from "./types";
@@ -387,11 +391,23 @@ export function createMemoryStore(): Store {
     async createFeatureRequest(input) {
       const now = nowIso();
       const request: import("./types").FeatureRequest = {
-        ...input,
         id: crypto.randomUUID(),
+        userId: input.userId,
+        title: input.title,
+        description: input.description,
+        category: input.category,
         status: "pendente",
         publishedVersion: null,
         adminNote: null,
+        fileName: input.fileName ?? null,
+        fileSize: input.fileSize ?? null,
+        fileSha256: input.fileSha256 ?? null,
+        fileBlobPathname: input.fileBlobPathname ?? null,
+        appVersion: input.appVersion ?? null,
+        appIcon: input.appIcon ?? null,
+        appPlatform: input.appPlatform === "windows" ? "windows" : "linux",
+        publishedAssetUrl: input.publishedAssetUrl ?? null,
+        publishedAt: input.publishedAt ?? null,
         createdAt: now,
         updatedAt: now,
       };
@@ -475,12 +491,138 @@ export function createMemoryStore(): Store {
     async countUnreadNotifications(userId) {
       return notifications.filter((n) => n.userId === userId && !n.readAt).length;
     },
+
+    async createStoreApp(app) {
+      if ([...storeApps.values()].some((item) => item.slug === app.slug && item.id !== app.id)) {
+        throw new Error("nome_em_uso");
+      }
+      if (app.sourceRequestId && [...storeApps.values()].some((item) => item.sourceRequestId === app.sourceRequestId)) {
+        throw new Error("ja_migrado");
+      }
+      storeApps.set(app.id, { ...app });
+      return { ...app };
+    },
+
+    async updateStoreApp(id, patch) {
+      const current = storeApps.get(id);
+      if (!current) return null;
+      const next: StoreApp = { ...current, ...patch, updatedAt: patch.updatedAt ?? nowIso() };
+      storeApps.set(id, next);
+      return { ...next };
+    },
+
+    async getStoreApp(id) {
+      const app = storeApps.get(id);
+      return app ? { ...app } : null;
+    },
+
+    async getStoreAppBySlug(slug) {
+      for (const app of storeApps.values()) {
+        if (app.slug === slug) return { ...app };
+      }
+      return null;
+    },
+
+    async getStoreAppBySourceRequest(requestId) {
+      for (const app of storeApps.values()) {
+        if (app.sourceRequestId === requestId) return { ...app };
+      }
+      return null;
+    },
+
+    async listStoreApps() {
+      return [...storeApps.values()]
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .map((app) => ({ ...app }));
+    },
+
+    async addStoreAppVersion(version) {
+      storeVersions.set(version.id, { ...version });
+      return { ...version };
+    },
+
+    async updateStoreAppVersion(id, patch) {
+      const current = storeVersions.get(id);
+      if (!current) return null;
+      const next: StoreAppVersion = { ...current, ...patch };
+      storeVersions.set(id, next);
+      return { ...next };
+    },
+
+    async getStoreAppVersion(id) {
+      const version = storeVersions.get(id);
+      return version ? { ...version } : null;
+    },
+
+    async listStoreAppVersions(appId) {
+      return [...storeVersions.values()]
+        .filter((version) => version.appId === appId)
+        .map((version) => ({ ...version }));
+    },
+
+    async createStoreAppReport(report) {
+      storeReports.push({ ...report });
+      return { ...report };
+    },
+
+    async listStoreAppReports(appId) {
+      return storeReports
+        .filter((report) => !appId || report.appId === appId)
+        .map((report) => ({ ...report }));
+    },
+
+    async resolveStoreAppReports(appId) {
+      for (const report of storeReports) {
+        if (report.appId === appId && report.status === "aberta") report.status = "resolvida";
+      }
+    },
+
+    consumeUploadQuota(input) {
+      assertUploadQuotaInput(input);
+      return exclusive(`upload:${input.userId}:${input.day}`, () => {
+        const key = `${input.userId}\0${input.day}`;
+        const current = uploadQuota.get(key) ?? { count: 0, bytes: 0 };
+        if (current.count + 1 > input.maxCount || current.bytes + input.bytes > input.maxBytes) {
+          return { ok: false as const, code: "cota_diaria_excedida" as const };
+        }
+        const next = { count: current.count + 1, bytes: current.bytes + input.bytes };
+        uploadQuota.set(key, next);
+        return { ok: true as const, count: next.count, bytes: next.bytes };
+      });
+    },
+
+    consumeSignupIpQuota(input) {
+      assertSignupIpQuotaInput(input);
+      return exclusive(`signup:${input.ip}:${input.day}`, () => {
+        const key = `${input.ip}\0${input.day}`;
+        const current = signupQuota.get(key) ?? 0;
+        if (current + 1 > input.maxCount) {
+          return { ok: false as const, code: "limite_ip_cadastro" as const };
+        }
+        const count = current + 1;
+        signupQuota.set(key, count);
+        return { ok: true as const, count };
+      });
+    },
   };
 
   const featureRequests = new Map<string, import("./types").FeatureRequest>();
   const requestEvents: import("./types").FeatureRequestEvent[] = [];
   const notifications: import("./types").UserNotification[] = [];
   const paymentEvents: import("./types").PaymentEvent[] = [];
+  const storeApps = new Map<string, StoreApp>();
+  const storeVersions = new Map<string, StoreAppVersion>();
+  const storeReports: StoreAppReport[] = [];
+  const uploadQuota = new Map<string, { count: number; bytes: number }>();
+  const signupQuota = new Map<string, number>();
+  const quotaLocks = new Map<string, Promise<unknown>>();
+
+  function exclusive<T>(key: string, fn: () => T): Promise<T> {
+    const previous = quotaLocks.get(key) ?? Promise.resolve();
+    const run = previous.then(fn, fn);
+    quotaLocks.set(key, run.then(() => undefined, () => undefined));
+    return run;
+  }
 
   return store;
 }

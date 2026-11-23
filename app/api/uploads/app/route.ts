@@ -3,9 +3,8 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getStore } from "@/lib/db";
 import { getSessionUser, readSessionCookie } from "@/lib/auth";
 import { desktopSession } from "@/app/api/desktop/_shared";
-import { userHasPaidLicense } from "@/lib/license-gate";
 import { clientIp, jsonError, sameOrigin } from "@/lib/http";
-import { rateLimit } from "@/lib/rate-limit";
+import { takeUploadQuota } from "@/lib/quota";
 import { validateAppFile } from "@/lib/app-submissions";
 
 export const dynamic = "force-dynamic";
@@ -24,9 +23,8 @@ export async function POST(req: Request) {
   if (!current) return jsonError("não autenticado", 401);
   if (!sameOrigin(req)) return jsonError("origem inválida", 403);
   const store = await getStore();
-  if (!(await userHasPaidLicense(current.email, store))) return jsonError("licença necessária", 403);
-  const limited = rateLimit(`app-upload:${current.userId}`, 20, 60 * 60 * 1000);
-  if (!limited.ok) return jsonError("muitas tentativas", 429);
+  const account = await store.getUserById(current.userId);
+  if (account?.status === "bloqueado") return jsonError("conta bloqueada", 403);
 
   let body: HandleUploadBody;
   try { body = (await req.json()) as HandleUploadBody; } catch { return jsonError("pedido inválido", 400); }
@@ -37,11 +35,20 @@ export async function POST(req: Request) {
       body,
       onBeforeGenerateToken: async (_pathname, clientPayload) => {
         const raw = JSON.parse(clientPayload ?? "{}");
-        const check = validateAppFile({ name: raw.filename, size: raw.size, sha256: raw.sha256 });
+        const check = validateAppFile({
+          name: raw.filename,
+          size: raw.size,
+          sha256: raw.sha256,
+          platform: raw.platform === "windows" ? "windows" : "linux",
+        });
         if (!check.ok) throw new Error(check.reason);
+        const size = Number(raw.size);
+        if (!Number.isSafeInteger(size)) throw new Error("tamanho_invalido");
+        const quota = await takeUploadQuota(store, current.userId, size);
+        if (!quota.ok) throw new Error(quota.code);
         return {
           allowedContentTypes: ["application/octet-stream", "application/x-executable"],
-          maximumSizeInBytes: 500 * 1024 * 1024,
+          maximumSizeInBytes: size,
           addRandomSuffix: false,
           allowOverwrite: false,
           cacheControlMaxAge: 31536000,
@@ -51,6 +58,8 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(result);
   } catch (err) {
-    return jsonError(err instanceof Error ? err.message : "não foi possível autorizar o envio", 400);
+    const message = err instanceof Error ? err.message : "não foi possível autorizar o envio";
+    if (message === "cota_diaria_excedida") return jsonError(message, 429);
+    return jsonError(message, 400);
   }
 }

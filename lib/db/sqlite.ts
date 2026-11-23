@@ -9,6 +9,9 @@ import {
   rowToDevice,
   rowToFeatureRequest,
   rowToLicense,
+  rowToStoreApp,
+  rowToStoreAppReport,
+  rowToStoreAppVersion,
   rowToOrder,
   rowToPairing,
   rowToSession,
@@ -17,6 +20,15 @@ import {
   rowToUserNotification,
   rowToHistory,
 } from "./sql-shared";
+import {
+  assertSignupIpQuotaInput,
+  assertUploadQuotaInput,
+  signupIpQuotaArgs,
+  signupQuotaFromRow,
+  uploadQuotaArgs,
+  uploadQuotaFromRow,
+} from "./quota";
+import { SIGNUP_IP_QUOTA_UPSERT, UPLOAD_QUOTA_UPSERT } from "./quota-sql";
 import type {
   DownloadTokenRow,
   License,
@@ -33,9 +45,11 @@ function openDb(path: string): DatabaseSync {
   mkdirSync(dirname(abs), { recursive: true });
   const db = new DatabaseSync(abs);
   db.exec("PRAGMA journal_mode = WAL;");
+  db.exec("PRAGMA busy_timeout = 5000;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA_SQL);
   ensurePairingEmailColumns(db);
+  ensureFeatureRequestColumns(db);
   return db;
 }
 
@@ -48,6 +62,14 @@ function ensurePairingEmailColumns(db: DatabaseSync): void {
   for (const column of PAIRING_EMAIL_COLUMNS) {
     if (!existing.has(column)) db.exec(`ALTER TABLE pairings ADD COLUMN ${column} TEXT`);
   }
+}
+
+/** Migração aditiva: só acrescenta colunas que faltam. Não recria nem apaga a tabela. */
+function ensureFeatureRequestColumns(db: DatabaseSync): void {
+  const existing = new Set(
+    (db.prepare(`PRAGMA table_info(feature_requests)`).all() as { name: string }[]).map((c) => c.name),
+  );
+  if (!existing.has("app_platform")) db.exec("ALTER TABLE feature_requests ADD COLUMN app_platform TEXT");
 }
 
 export function createSqliteStore(path: string): Store {
@@ -528,9 +550,26 @@ function wrap(db: DatabaseSync): Store {
       const id = crypto.randomUUID();
       db.prepare(
         `INSERT INTO feature_requests
-          (id, user_id, title, description, category, status, published_version, admin_note, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, 'pendente', NULL, NULL, ?, ?)`,
-      ).run(id, input.userId, input.title, input.description, input.category, now, now);
+          (id, user_id, title, description, category, status, published_version, admin_note,
+           file_name, file_size, file_sha256, file_blob_pathname, app_version, app_icon, app_platform,
+           published_asset_url, published_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'pendente', NULL, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)`,
+      ).run(
+        id,
+        input.userId,
+        input.title,
+        input.description,
+        input.category,
+        input.fileName ?? null,
+        input.fileSize ?? null,
+        input.fileSha256 ?? null,
+        input.fileBlobPathname ?? null,
+        input.appVersion ?? null,
+        input.appIcon ?? null,
+        input.appPlatform === "windows" ? "windows" : "linux",
+        now,
+        now,
+      );
       return (await this.getFeatureRequest(id))!;
     },
 
@@ -617,6 +656,115 @@ function wrap(db: DatabaseSync): Store {
         "SELECT COUNT(*) AS n FROM user_notifications WHERE user_id = ? AND read_at IS NULL",
       ).get(userId) as { n: number };
       return Number(row.n);
+    },
+
+    async createStoreApp(app) {
+      db.prepare(
+        `INSERT INTO store_apps
+          (id, slug, owner_user_id, name, description, category, icon, platform, visibility, review_note,
+           verified, author_version_id, public_version_id, source_request_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        app.id, app.slug, app.ownerUserId, app.name, app.description, app.category, app.icon,
+        app.platform, app.visibility, app.reviewNote, app.verified ? 1 : 0, app.authorVersionId,
+        app.publicVersionId, app.sourceRequestId, app.createdAt, app.updatedAt,
+      );
+      return (await this.getStoreApp(app.id))!;
+    },
+
+    async updateStoreApp(id, patch) {
+      const current = await this.getStoreApp(id);
+      if (!current) return null;
+      const next = { ...current, ...patch, updatedAt: patch.updatedAt ?? nowIso() };
+      db.prepare(
+        `UPDATE store_apps SET name = ?, description = ?, category = ?, icon = ?, platform = ?, visibility = ?,
+           review_note = ?, verified = ?, author_version_id = ?, public_version_id = ?, updated_at = ? WHERE id = ?`,
+      ).run(
+        next.name, next.description, next.category, next.icon, next.platform, next.visibility,
+        next.reviewNote, next.verified ? 1 : 0, next.authorVersionId, next.publicVersionId, next.updatedAt, id,
+      );
+      return this.getStoreApp(id);
+    },
+
+    async getStoreApp(id) {
+      const row = db.prepare("SELECT * FROM store_apps WHERE id = ?").get(id);
+      return row ? rowToStoreApp(row as Record<string, unknown>) : null;
+    },
+
+    async getStoreAppBySlug(slug) {
+      const row = db.prepare("SELECT * FROM store_apps WHERE slug = ?").get(slug);
+      return row ? rowToStoreApp(row as Record<string, unknown>) : null;
+    },
+
+    async getStoreAppBySourceRequest(requestId) {
+      const row = db.prepare("SELECT * FROM store_apps WHERE source_request_id = ?").get(requestId);
+      return row ? rowToStoreApp(row as Record<string, unknown>) : null;
+    },
+
+    async listStoreApps() {
+      const rows = db.prepare("SELECT * FROM store_apps ORDER BY created_at DESC").all();
+      return (rows as Record<string, unknown>[]).map(rowToStoreApp);
+    },
+
+    async addStoreAppVersion(version) {
+      db.prepare(
+        `INSERT INTO store_app_versions
+          (id, app_id, version, file_name, file_size, file_sha256, sha256_source, file_blob_pathname, external_url, download_url, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        version.id, version.appId, version.version, version.fileName, version.fileSize, version.fileSha256,
+        version.sha256Source, version.fileBlobPathname, version.externalUrl, version.downloadUrl, version.createdAt,
+      );
+      return (await this.getStoreAppVersion(version.id))!;
+    },
+
+    async updateStoreAppVersion(id, patch) {
+      const current = await this.getStoreAppVersion(id);
+      if (!current) return null;
+      const downloadUrl = patch.downloadUrl === undefined ? current.downloadUrl : patch.downloadUrl;
+      db.prepare("UPDATE store_app_versions SET download_url = ? WHERE id = ?").run(downloadUrl, id);
+      return this.getStoreAppVersion(id);
+    },
+
+    async getStoreAppVersion(id) {
+      const row = db.prepare("SELECT * FROM store_app_versions WHERE id = ?").get(id);
+      return row ? rowToStoreAppVersion(row as Record<string, unknown>) : null;
+    },
+
+    async listStoreAppVersions(appId) {
+      const rows = db.prepare("SELECT * FROM store_app_versions WHERE app_id = ? ORDER BY created_at").all(appId);
+      return (rows as Record<string, unknown>[]).map(rowToStoreAppVersion);
+    },
+
+    async createStoreAppReport(report) {
+      db.prepare(
+        `INSERT INTO store_app_reports (id, app_id, reporter_user_id, reason, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(report.id, report.appId, report.reporterUserId, report.reason, report.status, report.createdAt);
+      return { ...report };
+    },
+
+    async listStoreAppReports(appId) {
+      const rows = appId
+        ? db.prepare("SELECT * FROM store_app_reports WHERE app_id = ? ORDER BY created_at DESC").all(appId)
+        : db.prepare("SELECT * FROM store_app_reports ORDER BY created_at DESC").all();
+      return (rows as Record<string, unknown>[]).map(rowToStoreAppReport);
+    },
+
+    async resolveStoreAppReports(appId) {
+      db.prepare("UPDATE store_app_reports SET status = 'resolvida' WHERE app_id = ? AND status = 'aberta'").run(appId);
+    },
+
+    async consumeUploadQuota(input) {
+      assertUploadQuotaInput(input);
+      const row = db.prepare(UPLOAD_QUOTA_UPSERT).get(...uploadQuotaArgs(input)) as { count: number; bytes: number } | undefined;
+      return uploadQuotaFromRow(row);
+    },
+
+    async consumeSignupIpQuota(input) {
+      assertSignupIpQuotaInput(input);
+      const row = db.prepare(SIGNUP_IP_QUOTA_UPSERT).get(...signupIpQuotaArgs(input)) as { count: number } | undefined;
+      return signupQuotaFromRow(row);
     },
   };
 }
