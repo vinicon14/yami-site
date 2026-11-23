@@ -30,17 +30,17 @@
     "kernel": "6.8.0-149-generic",
     "partes": [
       {
-        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte01",
+        "url": "/api/yamios/iso/1",
         "sha256": "bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8",
         "tamanho": 1992294400
       },
       {
-        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte02",
+        "url": "/api/yamios/iso/2",
         "sha256": "a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544",
         "tamanho": 1326350336
       }
     ],
-    "observacao": "ISO 1.0.0 completa, em duas partes. Junte as partes com cat e confira o SHA-256 antes de gravar."
+    "observacao": "ISO 1.0.0 completa, em duas partes. Disponível para usuários com licença ativa."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",
