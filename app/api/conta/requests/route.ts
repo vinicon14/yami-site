@@ -22,7 +22,6 @@ export async function POST(req: Request) {
       fileBlobPathname: typeof body.fileBlobPathname === "string" ? body.fileBlobPathname : null,
       appVersion: typeof body.appVersion === "string" ? body.appVersion : null,
       appIcon: typeof body.appIcon === "string" ? body.appIcon : null,
-      appPlatform: body.appPlatform === "windows" || body.platform === "windows" ? "windows" : "linux",
     });
     return NextResponse.json({ ok: true, item: toPublicFeatureRequest(item) }, { status: 201 });
   } catch (error) {

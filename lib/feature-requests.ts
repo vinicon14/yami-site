@@ -16,7 +16,6 @@ export function toPublicFeatureRequest(item: FeatureRequest): PublicFeatureReque
     fileBlobPathname: item.fileBlobPathname,
     appVersion: item.appVersion,
     appIcon: item.appIcon,
-    appPlatform: item.appPlatform === "windows" ? "windows" : "linux",
     publishedAssetUrl: item.publishedAssetUrl,
     publishedAt: item.publishedAt,
     createdAt: item.createdAt,
@@ -61,7 +60,6 @@ export type RequestInput = {
   fileBlobPathname?: string | null;
   appVersion?: string | null;
   appIcon?: string | null;
-  appPlatform?: "linux" | "windows" | null;
 };
 
 export type TransitionInput = {
@@ -98,7 +96,6 @@ export async function createRequest(store: Store, userId: string, input: Request
     fileBlobPathname: input.fileBlobPathname?.trim() || null,
     appVersion: input.appVersion?.trim() || null,
     appIcon: input.appIcon?.trim() || null,
-    appPlatform: input.appPlatform === "windows" ? "windows" : "linux",
     publishedAssetUrl: null,
     publishedAt: null,
   });

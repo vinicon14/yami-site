@@ -2,16 +2,14 @@
   "produto": "YAMI OS",
   "canal": "estavel",
   "versao": "1.0.0",
-  "build": "r5",
-  "data": "2026-11-23",
+  "build": "r1",
+  "data": "2026-11-22",
   "notas": [
-    "LightDM com greeter GTK instalado",
-    "Sem senha hardcoded; conta yami bloqueada",
-    "Troca de usuário e criação de contas pelo administrador",
-    "Criar apps: projetos, editor, validação e pacote para a loja",
-    "Loja com apps publicados e instalação com verificação de SHA-256",
-    "Página de instalação com ISO em duas partes",
-    "Atualização incremental preserva dados, Wi-Fi e aplicativos"
+    "YAMI OS 1.0.0: tela de login e contas de usuario separadas",
+    "Loja de aplicativos com instalacao segura e verificacao SHA-256",
+    "Publicacao de aplicativos pelo site com aprovacao administrativa",
+    "Pagina de instalacao com verificacao de partes da ISO",
+    "Atualizacao incremental preserva dados, Wi-Fi e aplicativos"
   ],
   "pacotes": [
     {
@@ -30,17 +28,17 @@
     "kernel": "6.8.0-149-generic",
     "partes": [
       {
-        "arquivo": "yami-os-1.0.0.iso.parte01",
+        "url": "/api/yamios/iso/1",
         "sha256": "bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8",
         "tamanho": 1992294400
       },
       {
-        "arquivo": "yami-os-1.0.0.iso.parte02",
+        "url": "/api/yamios/iso/2",
         "sha256": "a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544",
         "tamanho": 1326350336
       }
     ],
-    "observacao": "ISO 1.0.0 completa, em duas partes. Disponível para usuários com licença ativa."
+    "observacao": "ISO 1.0.0 completa, em duas partes. Disponível para usuários com licença ativa. O pacote incremental publicado é o 1.0.0 r1."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",

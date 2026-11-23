@@ -36,7 +36,6 @@ function openDb(path: string): DatabaseSync {
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA_SQL);
   ensurePairingEmailColumns(db);
-  ensureFeatureRequestColumns(db);
   return db;
 }
 
@@ -49,13 +48,6 @@ function ensurePairingEmailColumns(db: DatabaseSync): void {
   for (const column of PAIRING_EMAIL_COLUMNS) {
     if (!existing.has(column)) db.exec(`ALTER TABLE pairings ADD COLUMN ${column} TEXT`);
   }
-}
-
-function ensureFeatureRequestColumns(db: DatabaseSync): void {
-  const existing = new Set(
-    (db.prepare(`PRAGMA table_info(feature_requests)`).all() as { name: string }[]).map((c) => c.name),
-  );
-  if (!existing.has("app_platform")) db.exec("ALTER TABLE feature_requests ADD COLUMN app_platform TEXT");
 }
 
 export function createSqliteStore(path: string): Store {
@@ -536,26 +528,9 @@ function wrap(db: DatabaseSync): Store {
       const id = crypto.randomUUID();
       db.prepare(
         `INSERT INTO feature_requests
-          (id, user_id, title, description, category, status, published_version, admin_note,
-           file_name, file_size, file_sha256, file_blob_pathname, app_version, app_icon, app_platform,
-           published_asset_url, published_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, 'pendente', NULL, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)`,
-      ).run(
-        id,
-        input.userId,
-        input.title,
-        input.description,
-        input.category,
-        input.fileName ?? null,
-        input.fileSize ?? null,
-        input.fileSha256 ?? null,
-        input.fileBlobPathname ?? null,
-        input.appVersion ?? null,
-        input.appIcon ?? null,
-        input.appPlatform === "windows" ? "windows" : "linux",
-        now,
-        now,
-      );
+          (id, user_id, title, description, category, status, published_version, admin_note, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'pendente', NULL, NULL, ?, ?)`,
+      ).run(id, input.userId, input.title, input.description, input.category, now, now);
       return (await this.getFeatureRequest(id))!;
     },
 

@@ -127,7 +127,6 @@ export type FeatureRequest = {
   fileBlobPathname: string | null;
   appVersion: string | null;
   appIcon: string | null;
-  appPlatform: "linux" | "windows";
   publishedAssetUrl: string | null;
   publishedAt: string | null;
   createdAt: string;

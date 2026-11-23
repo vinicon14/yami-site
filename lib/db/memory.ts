@@ -388,7 +388,6 @@ export function createMemoryStore(): Store {
       const now = nowIso();
       const request: import("./types").FeatureRequest = {
         ...input,
-        appPlatform: input.appPlatform === "windows" ? "windows" : "linux",
         id: crypto.randomUUID(),
         status: "pendente",
         publishedVersion: null,

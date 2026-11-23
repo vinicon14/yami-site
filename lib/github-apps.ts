@@ -81,7 +81,6 @@ export async function publishAppToGitHub(input: {
   description: string;
   category: string;
   icon: string | null;
-  platform?: "linux" | "windows";
 }) {
   const blob = await get(input.blobPathname, { access: "private" });
   if (!blob?.stream) throw new Error("blob_indisponivel");
@@ -134,7 +133,7 @@ export async function publishAppToGitHub(input: {
     category: input.category,
     version: input.version,
     icon: input.icon,
-    platform: input.platform === "windows" ? "windows" : "linux",
+    platform: "linux",
     sha256: input.sha256.toLowerCase(),
     size: input.size,
     downloadUrl: asset.browser_download_url,

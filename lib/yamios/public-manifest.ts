@@ -3,18 +3,19 @@
  * A URL pública é montada aqui. Um campo ausente não pode virar o
  * texto "undefined" no caminho (foi o que aconteceu na r5).
  *
- * Para publicar outra build (por exemplo a R6, que ainda não está
- * no GitHub), edite só `lib/yamios/latest.json`:
- * `build`, `pacotes[].arquivo`, `pacotes[].sha256`, `pacotes[].tamanho`
- * e, na ISO, `iso.sha256`, `iso.tamanho`, `iso.partes[].arquivo`,
- * `iso.partes[].sha256`, `iso.partes[].tamanho`.
- * Não escreva a URL à mão. O tag da release é `v` + `versao`.
+ * O padrão é o pacote que existe na release v1.0.0:
+ * `yami-os-1.0.0-pacote.tar.zst`, 223924 bytes,
+ * sha256 3972f0f55000a185e76922406e2261f32f8ee782252a58da7424389755e96008.
+ * `build`, `notas` e `descricao` descrevem esse arquivo (r1).
  *
- * O pacote já publicado em v1.0.0 tem nome, tamanho e sha256 conhecidos.
- * Se o manifesto reutilizar esse nome com outro tamanho ou sha256, a
- * resposta pública omite o pacote em vez de anunciar bytes que não batem.
- * Um nome novo (a R6) passa direto: o checksum tem de ser o do arquivo
- * que o dono vai enviar, e este código não inventa esse valor.
+ * Para anunciar outro pacote (a r5 de 233028 bytes nunca foi enviada,
+ * e a R6 ainda está no PC), edite só `lib/yamios/latest.json`, juntos:
+ * `build`, `notas`, `pacotes[0].descricao`, `pacotes[0].arquivo`,
+ * `pacotes[0].sha256`, `pacotes[0].tamanho`.
+ * Não escreva `url`. O tag da release é `v` + `versao`.
+ * Use um nome de arquivo novo e o sha256 real do arquivo enviado.
+ * Reutilizar `yami-os-1.0.0-pacote.tar.zst` com outro tamanho ou sha256
+ * faz a API omitir o pacote, para não anunciar bytes que não batem.
  */
 
 const RELEASE_BASE = "https://github.com/vinicon14/yamios-releases/releases/download";
@@ -179,12 +180,3 @@ export function toPublicManifest(raw: YamiosManifestSource): PublicYamiosManifes
   };
 }
 
-export function isoDownloadUrl(raw: YamiosManifestSource, part: string): string | null {
-  const index = Number(part);
-  if (!Number.isInteger(index) || index < 1) return null;
-  const item = raw.iso?.partes?.[index - 1];
-  if (!item) return null;
-  const arquivo = assetFilename(item.arquivo) ?? filenameFromUrl(item.url);
-  if (!arquivo) return null;
-  return releaseAssetUrl(raw.versao ?? "", arquivo);
-}

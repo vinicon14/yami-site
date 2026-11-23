@@ -23,7 +23,6 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("geral");
-  const [platform, setPlatform] = useState<"linux" | "windows">("linux");
   const [file, setFile] = useState<File | null>(null);
   const [fileMeta, setFileMeta] = useState<{ name: string; size: number; sha256: string; pathname: string } | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -76,7 +75,6 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
         title,
         description,
         category,
-        appPlatform: platform,
         fileName: fileMeta?.name ?? null,
         fileSize: fileMeta?.size ?? null,
         fileSha256: fileMeta?.sha256 ?? null,
@@ -104,13 +102,6 @@ export function FeatureRequestsPanel({ items }: { items: PublicFeatureRequest[] 
       <form onSubmit={create} className="card mt-4 space-y-3 p-4">
         <input className="field w-full" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" maxLength={120} required />
         <input className="field w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Categoria" maxLength={32} required />
-        <label className="block text-sm">
-          <span className="text-muted">Plataforma</span>
-          <select className="field mt-1 w-full" value={platform} onChange={(e) => setPlatform(e.target.value === "windows" ? "windows" : "linux")}>
-            <option value="linux">Linux (instalar no YAMI OS)</option>
-            <option value="windows">Windows (download externo)</option>
-          </select>
-        </label>
         <textarea className="field w-full" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva sua solicitação" maxLength={4000} required />
         <input className="field w-full" type="file" accept=".AppImage,.tar.zst" onChange={(e) => void handleFileChange(e)} disabled={uploading} />
         {fileMeta ? <p className="text-xs text-muted">{fileMeta.name} · {fileMeta.size} bytes · SHA-256 conferido</p> : null}

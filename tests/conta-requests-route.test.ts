@@ -44,7 +44,6 @@ describe("POST /api/conta/requests", () => {
       fileBlobPathname: null,
       appVersion: null,
       appIcon: null,
-      appPlatform: "linux",
       publishedAssetUrl: null,
       publishedAt: null,
       createdAt: expect.any(String),
