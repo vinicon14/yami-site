@@ -27,7 +27,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ kind: string }
   return new NextResponse(bundle[file.field], {
     status: 200,
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Type": file.contentType,
       "Content-Disposition": `attachment; filename="${file.filename}"`,
       "Cache-Control": "public, max-age=300",
       "X-Content-Type-Options": "nosniff",

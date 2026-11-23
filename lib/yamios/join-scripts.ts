@@ -44,8 +44,17 @@ export type JoinScriptBundle = {
 };
 
 export const JOIN_SCRIPT_FILES = {
-  windows: { field: "bat", filename: "juntar-iso.bat" },
-  unix: { field: "sh", filename: "juntar-iso.sh" },
+  windows: {
+    field: "bat",
+    filename: "juntar-iso.bat",
+    // text/plain faz o navegador gravar .txt quando a URL não termina em .bat.
+    contentType: "application/octet-stream",
+  },
+  unix: {
+    field: "sh",
+    filename: "juntar-iso.sh",
+    contentType: "text/x-shellscript; charset=utf-8",
+  },
 } as const;
 
 export type JoinScriptKind = keyof typeof JOIN_SCRIPT_FILES;
@@ -152,12 +161,18 @@ function buildSh(version: string, parts: JoinScriptPart[], isoName: string, isoS
   return `${lines.join("\n")}\n`;
 }
 
+function batLabel(value: string): string {
+  const cleaned = value.replace(/[^A-Za-z0-9. _-]/g, "").trim();
+  return cleaned || "YAMI OS";
+}
+
 function buildBat(version: string, parts: JoinScriptPart[], isoName: string, before: Check[], after: Check[]): string {
+  const label = batLabel(version);
   const lines = [
     "@echo off",
     "setlocal EnableExtensions",
     'cd /d "%~dp0"',
-    `echo YAMI OS ${version}`,
+    `echo YAMI OS ${label}`,
     "echo Conferindo os arquivos. Nao feche esta janela.",
     "echo.",
   ];
@@ -222,7 +237,15 @@ function buildBat(version: string, parts: JoinScriptPart[], isoName: string, bef
   lines.push("echo Esperado: %QUER%");
   lines.push("echo Obtido: %OBTIDO%");
   lines.push("exit /b 1");
-  return `\uFEFF${lines.join("\r\n")}\r\n`;
+  // Sem BOM. O cmd.exe cola o \uFEFF no primeiro comando e não reconhece "@echo off".
+  // Só ASCII, com CRLF, para o eco não ficar ligado.
+  const script = `${lines.join("\r\n")}\r\n`;
+  for (let index = 0; index < script.length; index += 1) {
+    if (script.charCodeAt(index) > 127) {
+      throw new Error("o script .bat precisa ser ASCII, sem BOM");
+    }
+  }
+  return script;
 }
 
 function checksumBlock(tool: string, checks: Check[]): string {

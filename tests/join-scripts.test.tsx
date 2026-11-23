@@ -77,7 +77,8 @@ describe("scripts de juntar a ISO", () => {
     expect(bundle.macCommands).toContain("shasum -a 256 -c");
     expect(bundle.sh).not.toMatch(/https?:\/\//);
     expect(bundle.bat).not.toContain("/api/yamios/iso");
-    expect(bundle.bat.charCodeAt(0)).toBe(0xfeff);
+    expect(bundle.bat.startsWith("@echo off\r\n")).toBe(true);
+    expect(bundle.bat.charCodeAt(0)).toBe(64);
     expect(bundle.bat).toContain("\r\n");
     expect(bundle.sh).not.toContain("\r");
   });
@@ -170,6 +171,19 @@ describe("scripts de juntar a ISO", () => {
     }
     expect(bundle.parts.map((part) => part.fileName)).toEqual(["parte01", "parte02"]);
     expect(bundle.bat).toContain('copy /Y /b "parte01"+"parte02"');
+  });
+
+  it("o .bat começa com @echo off, usa CRLF e só tem bytes ASCII", () => {
+    const bundle = buildJoinScripts(raw);
+    expect(bundle).not.toBeNull();
+    if (!bundle) return;
+    const bat = bundle.bat;
+    expect(bat.startsWith("@echo off\r\n")).toBe(true);
+    expect(bat.includes("\uFEFF")).toBe(false);
+    expect(bat.charCodeAt(0)).toBe("@".charCodeAt(0));
+    expect([...bat].every((char) => char.charCodeAt(0) < 128)).toBe(true);
+    expect(bat.replace(/\r\n/g, "")).not.toMatch(/[\r\n]/);
+    expect(bat).toContain("\r\n");
   });
 
   it("recusa manifesto sem ISO utilizável", () => {
@@ -318,8 +332,16 @@ describe("scripts de juntar a ISO", () => {
       params: Promise.resolve({ kind: "windows" }),
     });
     expect(windows.status).toBe(200);
-    expect(windows.headers.get("content-disposition")).toContain("juntar-iso.bat");
-    expect(await windows.text()).toContain("certutil -hashfile");
+    const disposition = windows.headers.get("content-disposition") ?? "";
+    const type = windows.headers.get("content-type") ?? "";
+    expect(disposition).toContain('filename="juntar-iso.bat"');
+    expect(disposition.toLowerCase()).not.toContain(".txt");
+    expect(type).toBe("application/octet-stream");
+    expect(type.toLowerCase()).not.toContain("text/plain");
+    const bat = await windows.text();
+    expect(bat.startsWith("@echo off")).toBe(true);
+    expect(bat).toContain("certutil -hashfile");
+    expect([...bat].every((char) => char.charCodeAt(0) < 128)).toBe(true);
 
     const missing = await scriptGet(new Request("http://localhost/api/yamios/scripts/outro"), {
       params: Promise.resolve({ kind: "outro" }),
