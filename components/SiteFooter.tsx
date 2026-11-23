@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { YAMI_OS_NAME } from "@/lib/yamios/brand";
 import { YamiWordmark } from "./YamiWordmark";
 
 export function SiteFooter() {
@@ -21,7 +22,7 @@ export function SiteFooter() {
             </li>
             <li>
               <Link href="/instalar-yami-os" className="footer-link">
-                Instalar o YAMI OS
+                Instalar o {YAMI_OS_NAME}
               </Link>
             </li>
             <li>

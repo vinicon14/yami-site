@@ -852,3 +852,34 @@ html.lite-motion .reveal {
   transform: none !important;
   transition: none !important;
 }
+
+.os-promo {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-line);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(124, 108, 255, 0.14), transparent 42%),
+    radial-gradient(circle at 100% 80%, rgba(34, 211, 238, 0.08), transparent 36%);
+}
+
+.iso-offer {
+  min-width: 0;
+}
+
+.iso-hash,
+.iso-commands {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.iso-commands {
+  white-space: pre-wrap;
+  border-radius: var(--radius-lg);
+  background: var(--color-canvas);
+  padding: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+}

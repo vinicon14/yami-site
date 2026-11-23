@@ -1,3 +1,5 @@
+import { YAMI_OS_NAME } from "@/lib/yamios/brand";
+
 /**
  * O manifesto versionado guarda o nome do arquivo (`arquivo`).
  * A URL pública é montada aqui. Um campo ausente não pode virar o
@@ -158,7 +160,7 @@ export function toPublicManifest(raw: YamiosManifestSource): PublicYamiosManifes
   }));
 
   return {
-    produto: raw.produto ?? "YAMI OS",
+    produto: raw.produto ?? YAMI_OS_NAME,
     canal: raw.canal ?? "estavel",
     versao,
     build: raw.build ?? "",

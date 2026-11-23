@@ -1,8 +1,11 @@
 import { ScreenshotFrame } from "@/components/ScreenshotFrame";
 import { BuyButton } from "@/components/BuyButton";
+import { YamiOsPromo } from "@/components/YamiOsPromo";
 import { ACCEPTED_PAYMENT_COPY } from "@/lib/mp-checkout";
 import { formatPriceBrl, getPriceBrl, PRODUCT } from "@/lib/config";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { YAMI_OS_NAME } from "@/lib/yamios/brand";
+import yamiOsManifest from "@/lib/yamios/latest.json";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -80,7 +83,7 @@ export default function HomePage() {
                 Ver o painel remoto
               </Link>
               <Link data-magnetic href="/instalar-yami-os" className="btn-ghost">
-                Instalar o YAMI OS
+                Instalar o {YAMI_OS_NAME}
               </Link>
             </div>
             <p className="mt-4 font-mono text-xs leading-relaxed text-muted">
@@ -88,6 +91,8 @@ export default function HomePage() {
             </p>
           </div>
         </header>
+
+        <YamiOsPromo source={yamiOsManifest} />
 
         <div className="home-stage mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-16">
           <div className="tilt-stage" data-parallax="0.035">
@@ -175,7 +180,7 @@ export default function HomePage() {
                 Ver o que está incluso
               </Link>
               <Link data-magnetic href="/instalar-yami-os" className="btn-ghost">
-                Instalar o YAMI OS
+                Instalar o {YAMI_OS_NAME}
               </Link>
             </div>
           </div>

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import manifest from "@/lib/yamios/latest.json";
+import { YamiOsPromo } from "@/components/YamiOsPromo";
 import { renderInstallCommands } from "@/lib/install-page";
+import { YAMI_OS_NAME } from "@/lib/yamios/brand";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export default function InstalarYamiOsPage() {
   const iso = manifest.iso;
@@ -11,9 +13,11 @@ export default function InstalarYamiOsPage() {
   const hasParts = parts.length > 0;
 
   return (
-    <article className="mx-auto max-w-3xl px-5 py-12 md:px-8 md:py-16">
+    <>
+      <YamiOsPromo source={manifest} />
+      <article className="mx-auto min-w-0 max-w-3xl px-5 py-12 md:px-8 md:py-16">
       <p className="kicker">Instalação</p>
-      <h1 className="mt-3 text-4xl font-semibold tracking-tight">Instalar o YAMI OS</h1>
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight text-balance">Instalar o {YAMI_OS_NAME}</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">
         Versão {manifest.versao} · build {manifest.build} · kernel {iso.kernel}. O sistema é baixado em partes para caber no GitHub.
       </p>
@@ -24,8 +28,9 @@ export default function InstalarYamiOsPage() {
         <p className="mt-1 text-xs text-muted">Tamanho aproximado: {Math.round(iso.tamanho / 1024 / 1024 / 1024)} GB</p>
       </section>
 
-      <section className="card mt-6 p-5">
+      <section className="card mt-6 min-w-0 p-5">
         <p className="kicker">Downloads</p>
+        {iso.observacao ? <p className="mt-3 text-sm leading-relaxed text-muted">{iso.observacao}</p> : null}
         {hasParts ? (
           <ul className="mt-3 space-y-3 text-sm">
             {parts.map((part, index) => (
@@ -38,15 +43,15 @@ export default function InstalarYamiOsPage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-muted">ISO em preparação. Use o pacote de atualização se você já tem o YAMI OS.</p>
+          <p className="mt-3 text-sm text-muted">ISO em preparação. Use o pacote de atualização se você já tem o {YAMI_OS_NAME}.</p>
         )}
       </section>
 
       <section className="card mt-6 p-5">
         <p className="kicker">Montar a ISO</p>
-        <pre className="mt-3 overflow-x-auto rounded-lg bg-surface p-3 text-xs">{commands.join("\n")}</pre>
-        <p className="mt-3 text-sm text-muted">
-          No Windows, use PowerShell: <code>Get-Content parte01,parte02 -Encoding Byte | Set-Content yami-os-amd64.iso -Encoding Byte</code>
+        <pre className="iso-commands mt-3">{commands.join("\n")}</pre>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          No Windows, use PowerShell: <code className="iso-hash">Get-Content parte01,parte02 -Encoding Byte | Set-Content yami-os-amd64.iso -Encoding Byte</code>
         </p>
       </section>
 
@@ -56,5 +61,6 @@ export default function InstalarYamiOsPage() {
         </Link>
       </p>
     </article>
+    </>
   );
 }
