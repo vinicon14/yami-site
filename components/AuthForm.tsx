@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+function authError(error: string): string {
+  if (error === "limite_ip_cadastro") {
+    return "Muitas contas criadas a partir desta rede hoje. Tente amanhã.";
+  }
+  return error;
+}
+
 export function AuthForm({ next = "/conta" }: { next?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -27,7 +34,7 @@ export function AuthForm({ next = "/conta" }: { next?: string }) {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "não foi possível entrar");
+        setError(authError(data.error ?? "não foi possível entrar"));
         setPending(false);
         return;
       }

@@ -16,13 +16,13 @@ import type {
 import { nowIso } from "./db/types";
 import { normalizeAppPlatform, storeActionLabel, type AppPlatform } from "./apps-catalog";
 import { publishAppToGitHub, removePublishedApp } from "./github-apps";
+import { takeUploadQuota } from "./quota";
 import { rateLimit } from "./rate-limit";
 
 export const LINUX_MAX_BYTES = 500 * 1024 * 1024;
 export const WINDOWS_EXTERNAL_MAX_BYTES = 3 * 1024 * 1024 * 1024;
 export const DOWNLOAD_TTL_MS = 30 * 60 * 1000;
 const NOVO_MS = 14 * 24 * 60 * 60 * 1000;
-const SUBMIT_LIMIT = 8;
 const SUBMIT_WINDOW_MS = 60 * 60 * 1000;
 const REPORT_LIMIT = 10;
 
@@ -415,8 +415,6 @@ async function takenPath(store: Store, pathname: string, ownerUserId: string): P
 
 export async function submitStoreApp(store: Store, user: User, input: SubmitInput, now = Date.now()): Promise<StoreApp> {
   if (user.status === "bloqueado") throw new Error("conta_bloqueada");
-  const limited = rateLimit(`store-app-submit:${user.id}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS, now);
-  if (!limited.ok) throw new Error("limite_excedido");
 
   const name = input.name.trim();
   const description = input.description.trim();
@@ -476,6 +474,9 @@ export async function submitStoreApp(store: Store, user: User, input: SubmitInpu
     fileSha = declaredSha;
     sha256Source = "declarado";
   }
+
+  const quota = await takeUploadQuota(store, user.id, fileSize, now);
+  if (!quota.ok) throw new Error(quota.code);
 
   const createdAt = new Date(now).toISOString();
   const versionRow: StoreAppVersion = {

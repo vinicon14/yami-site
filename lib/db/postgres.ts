@@ -1,5 +1,11 @@
 import { parseReleaseManifest } from "../release";
 import type { ReleaseManifest } from "../release";
+import {
+  assertSignupIpQuotaInput,
+  assertUploadQuotaInput,
+  signupQuotaFromRow,
+  uploadQuotaFromRow,
+} from "./quota";
 import type { NewOrderInput, Order, Store } from "./types";
 import { nowIso } from "./types";
 import {
@@ -640,6 +646,36 @@ function wrap(sql: Sql): Store {
 
     async resolveStoreAppReports(appId) {
       await sql`UPDATE store_app_reports SET status = 'resolvida' WHERE app_id = ${appId} AND status = 'aberta'`;
+    },
+
+    async consumeUploadQuota(input) {
+      assertUploadQuotaInput(input);
+      const rows = await sql`
+        INSERT INTO upload_quota (user_id, day, count, bytes)
+        SELECT ${input.userId}, ${input.day}, 1, ${input.bytes}
+        WHERE ${input.bytes} <= ${input.maxBytes} AND 1 <= ${input.maxCount}
+        ON CONFLICT (user_id, day) DO UPDATE
+        SET count = upload_quota.count + 1,
+            bytes = upload_quota.bytes + EXCLUDED.bytes
+        WHERE upload_quota.count + 1 <= ${input.maxCount}
+          AND upload_quota.bytes + EXCLUDED.bytes <= ${input.maxBytes}
+        RETURNING count, bytes
+      `;
+      return uploadQuotaFromRow(one(rows) as { count: number | string; bytes: number | string } | null);
+    },
+
+    async consumeSignupIpQuota(input) {
+      assertSignupIpQuotaInput(input);
+      const rows = await sql`
+        INSERT INTO signup_ip_quota (ip, day, count)
+        SELECT ${input.ip}, ${input.day}, 1
+        WHERE 1 <= ${input.maxCount}
+        ON CONFLICT (ip, day) DO UPDATE
+        SET count = signup_ip_quota.count + 1
+        WHERE signup_ip_quota.count + 1 <= ${input.maxCount}
+        RETURNING count
+      `;
+      return signupQuotaFromRow(one(rows) as { count: number | string } | null);
     },
   };
 }

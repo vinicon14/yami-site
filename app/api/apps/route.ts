@@ -11,7 +11,7 @@ function fail(error: unknown) {
   const code = error instanceof Error ? error.message : "pedido_invalido";
   const status =
     code === "conta_bloqueada" ? 403 :
-    code === "limite_excedido" ? 429 :
+    code === "limite_excedido" || code === "cota_diaria_excedida" ? 429 :
     code === "nao_encontrado" ? 404 :
     400;
   return jsonError(code, status);

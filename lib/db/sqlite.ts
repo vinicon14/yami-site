@@ -20,6 +20,15 @@ import {
   rowToUserNotification,
   rowToHistory,
 } from "./sql-shared";
+import {
+  assertSignupIpQuotaInput,
+  assertUploadQuotaInput,
+  signupIpQuotaArgs,
+  signupQuotaFromRow,
+  uploadQuotaArgs,
+  uploadQuotaFromRow,
+} from "./quota";
+import { SIGNUP_IP_QUOTA_UPSERT, UPLOAD_QUOTA_UPSERT } from "./quota-sql";
 import type {
   DownloadTokenRow,
   License,
@@ -36,6 +45,7 @@ function openDb(path: string): DatabaseSync {
   mkdirSync(dirname(abs), { recursive: true });
   const db = new DatabaseSync(abs);
   db.exec("PRAGMA journal_mode = WAL;");
+  db.exec("PRAGMA busy_timeout = 5000;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA_SQL);
   ensurePairingEmailColumns(db);
@@ -743,6 +753,18 @@ function wrap(db: DatabaseSync): Store {
 
     async resolveStoreAppReports(appId) {
       db.prepare("UPDATE store_app_reports SET status = 'resolvida' WHERE app_id = ? AND status = 'aberta'").run(appId);
+    },
+
+    async consumeUploadQuota(input) {
+      assertUploadQuotaInput(input);
+      const row = db.prepare(UPLOAD_QUOTA_UPSERT).get(...uploadQuotaArgs(input)) as { count: number; bytes: number } | undefined;
+      return uploadQuotaFromRow(row);
+    },
+
+    async consumeSignupIpQuota(input) {
+      assertSignupIpQuotaInput(input);
+      const row = db.prepare(SIGNUP_IP_QUOTA_UPSERT).get(...signupIpQuotaArgs(input)) as { count: number } | undefined;
+      return signupQuotaFromRow(row);
     },
   };
 }

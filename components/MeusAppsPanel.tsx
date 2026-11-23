@@ -8,7 +8,8 @@ import { PublishedAppsList } from "./PublishedAppsList";
 
 const ERRORS: Record<string, string> = {
   nome_em_uso: "Esse nome já pertence a outra pessoa.",
-  limite_excedido: "Muitos envios nesta hora. Tente de novo mais tarde.",
+  limite_excedido: "Muitas denúncias nesta hora. Tente de novo mais tarde.",
+  cota_diaria_excedida: "Cota diária de envios esgotada. Ela zera no próximo dia (UTC).",
   sha256_divergente: "O SHA-256 do arquivo não confere com o que o servidor calculou.",
   sha256_invalido: "Informe o SHA-256 em 64 caracteres hexadecimais.",
   formato_invalido: "Formato de arquivo não aceito.",
@@ -101,7 +102,7 @@ export function MeusAppsPanel() {
       setFileMeta({ name: selected.name, size: selected.size, sha256: digest, pathname: uploaded.pathname });
       setMessage("Arquivo recebido. O servidor confere o SHA-256 ao publicar.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível enviar o arquivo.");
+      setMessage(explain(error instanceof Error ? error.message : "Não foi possível enviar o arquivo."));
     } finally {
       setUploading(false);
     }

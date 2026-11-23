@@ -235,3 +235,18 @@ CREATE TABLE IF NOT EXISTS store_app_reports (
 CREATE INDEX IF NOT EXISTS idx_store_apps_owner ON store_apps (owner_user_id, visibility);
 CREATE INDEX IF NOT EXISTS idx_store_app_versions_app ON store_app_versions (app_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_store_app_reports_status ON store_app_reports (status, created_at);
+
+CREATE TABLE IF NOT EXISTS upload_quota (
+  user_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  bytes BIGINT NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS signup_ip_quota (
+  ip TEXT NOT NULL,
+  day TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  PRIMARY KEY (ip, day)
+);
