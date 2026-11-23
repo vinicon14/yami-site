@@ -10,6 +10,14 @@ export function toPublicFeatureRequest(item: FeatureRequest): PublicFeatureReque
     category: item.category,
     status: item.status,
     publishedVersion: item.publishedVersion,
+    fileName: item.fileName,
+    fileSize: item.fileSize,
+    fileSha256: item.fileSha256,
+    fileBlobPathname: item.fileBlobPathname,
+    appVersion: item.appVersion,
+    appIcon: item.appIcon,
+    publishedAssetUrl: item.publishedAssetUrl,
+    publishedAt: item.publishedAt,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };
@@ -46,6 +54,12 @@ export type RequestInput = {
   title: string;
   description: string;
   category: string;
+  fileName?: string | null;
+  fileSize?: number | null;
+  fileSha256?: string | null;
+  fileBlobPathname?: string | null;
+  appVersion?: string | null;
+  appIcon?: string | null;
 };
 
 export type TransitionInput = {
@@ -55,6 +69,7 @@ export type TransitionInput = {
   toStatus: FeatureRequestStatus;
   note?: string | null;
   publishedVersion?: string | null;
+  publishedAssetUrl?: string | null;
 };
 
 export function validateRequestInput(input: RequestInput): { ok: true } | { ok: false; reason: string } {
@@ -75,6 +90,14 @@ export async function createRequest(store: Store, userId: string, input: Request
     title: input.title.trim(),
     description: input.description.trim(),
     category: input.category.trim(),
+    fileName: input.fileName?.trim() || null,
+    fileSize: input.fileSize ?? null,
+    fileSha256: input.fileSha256?.trim().toLowerCase() || null,
+    fileBlobPathname: input.fileBlobPathname?.trim() || null,
+    appVersion: input.appVersion?.trim() || null,
+    appIcon: input.appIcon?.trim() || null,
+    publishedAssetUrl: null,
+    publishedAt: null,
   });
 }
 
@@ -102,6 +125,7 @@ export async function transitionRequest(store: Store, input: TransitionInput) {
     note: input.actorRole === "admin" ? input.note?.slice(0, 1000) ?? null : undefined,
     // `undefined` preserves the stored version; only an explicit null clears it.
     publishedVersion: input.publishedVersion,
+    publishedAssetUrl: input.publishedAssetUrl,
   });
   if (!updated) throw new Error("solicitacao_nao_encontrada");
 

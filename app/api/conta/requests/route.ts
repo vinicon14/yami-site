@@ -16,6 +16,12 @@ export async function POST(req: Request) {
       title: String(body.title ?? ""),
       description: String(body.description ?? ""),
       category: String(body.category ?? ""),
+      fileName: typeof body.fileName === "string" ? body.fileName : null,
+      fileSize: typeof body.fileSize === "number" ? body.fileSize : null,
+      fileSha256: typeof body.fileSha256 === "string" ? body.fileSha256 : null,
+      fileBlobPathname: typeof body.fileBlobPathname === "string" ? body.fileBlobPathname : null,
+      appVersion: typeof body.appVersion === "string" ? body.appVersion : null,
+      appIcon: typeof body.appIcon === "string" ? body.appIcon : null,
     });
     return NextResponse.json({ ok: true, item: toPublicFeatureRequest(item) }, { status: 201 });
   } catch (error) {

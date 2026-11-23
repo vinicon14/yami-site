@@ -561,12 +561,17 @@ function wrap(db: DatabaseSync): Store {
       const now = nowIso();
       const publishedVersion =
         input.publishedVersion === undefined ? current.publishedVersion : input.publishedVersion;
+      const publishedAssetUrl =
+        input.publishedAssetUrl === undefined ? current.publishedAssetUrl : input.publishedAssetUrl;
+      const publishedAt = input.publishedAssetUrl === undefined ? current.publishedAt : (input.publishedAssetUrl ? now : null);
       db.prepare(
-        `UPDATE feature_requests SET status = ?, published_version = ?, admin_note = ?, updated_at = ? WHERE id = ?`,
+        `UPDATE feature_requests SET status = ?, published_version = ?, admin_note = ?, published_asset_url = ?, published_at = ?, updated_at = ? WHERE id = ?`,
       ).run(
         input.toStatus,
         publishedVersion,
         input.note ?? current.adminNote,
+        publishedAssetUrl,
+        publishedAt,
         now,
         input.id,
       );
