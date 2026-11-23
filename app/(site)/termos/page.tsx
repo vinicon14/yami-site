@@ -20,8 +20,7 @@ export default function TermosPage() {
       <div className="prose-yami mt-8 text-sm leading-relaxed">
         <p>
           Estes termos valem para a compra e o uso da YAMI, assistente de IA para Windows.
-          O responsável pelo produto é Vinicius Marques. A YAMI também aparece como
-          ferramenta principal no i-Tools (i-tools.shop). Este texto ainda é um rascunho
+          O responsável pelo produto é Vinicius Marques. Este texto ainda é um rascunho
           e precisa de revisão jurídica.
         </p>
         <h2>A compra</h2>

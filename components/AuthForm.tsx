@@ -41,18 +41,18 @@ export function AuthForm({ next = "/conta" }: { next?: string }) {
 
   return (
     <div className="mt-8">
-      <div className="mb-6 flex gap-4 text-sm">
+      <div className="mb-6 flex gap-2 text-sm">
         <button
           type="button"
           onClick={() => setMode("login")}
-          className={mode === "login" ? "text-ink font-medium underline underline-offset-4 decoration-accent" : "text-muted hover:text-ink"}
+          className={`inline-flex min-h-11 items-center px-3 ${mode === "login" ? "text-ink font-medium underline underline-offset-4 decoration-accent" : "text-muted hover:text-ink"}`}
         >
           Entrar
         </button>
         <button
           type="button"
           onClick={() => setMode("register")}
-          className={mode === "register" ? "text-ink font-medium underline underline-offset-4 decoration-accent" : "text-muted hover:text-ink"}
+          className={`inline-flex min-h-11 items-center px-3 ${mode === "register" ? "text-ink font-medium underline underline-offset-4 decoration-accent" : "text-muted hover:text-ink"}`}
         >
           Criar conta
         </button>

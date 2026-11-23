@@ -61,7 +61,7 @@ export default async function CheckoutPage({
 
       <p className="mt-8 text-sm text-muted">
         Já comprou?{" "}
-        <Link href="/entrar" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
+        <Link href="/entrar" className="inline-flex min-h-11 items-center text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Entre na sua conta
         </Link>{" "}
         para ver a licença e o download.

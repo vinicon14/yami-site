@@ -335,15 +335,15 @@ export function PainelApp({
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
-      <header className="flex items-center justify-between border-b border-line bg-frame/80 px-4 py-2 backdrop-blur-md">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line bg-frame/80 px-4 py-2 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <Link href="/" className="inline-flex items-center gap-2 text-ink" aria-label="YAMI, página inicial">
+          <Link href="/" className="inline-flex min-h-11 items-center gap-2 text-ink" aria-label="YAMI, página inicial">
             <img src="/yami-logo.svg" alt="" width={22} height={22} style={{ borderRadius: "20%" }} />
             <span className="text-[1.05rem] font-semibold tracking-tight">YAMI</span>
           </Link>
           <span className="kicker">Painel remoto</span>
         </div>
-        <div className="flex items-center gap-3 text-[11px]">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span
             className={`inline-block h-1.5 w-1.5 rounded-full ${online ? "bg-success" : "bg-warning"}`}
             aria-hidden
@@ -356,7 +356,7 @@ export function PainelApp({
               : "nenhum PC pareado"}
             {selected?.lastSeenAt ? ` · visto ${formatSeen(selected.lastSeenAt)}` : ""}
           </span>
-          <Link href="/conta" className="text-ink-soft hover:text-ink">
+          <Link href="/conta" className="inline-flex min-h-11 max-w-full items-center truncate text-ink-soft hover:text-ink">
             {user.email}
           </Link>
         </div>
@@ -380,14 +380,14 @@ export function PainelApp({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1">
-        <aside className="w-44 shrink-0 border-r border-line bg-canvas p-3 text-[13px] leading-7 text-muted md:w-[16.5rem]">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <aside className="flex flex-wrap gap-1 border-b border-line bg-canvas p-2 text-[13px] text-muted md:block md:w-[16.5rem] md:shrink-0 md:border-b-0 md:border-r md:p-3 md:leading-7">
           {(["conversas", "forage", "config"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`block w-full rounded-lg px-2 text-left ${
+              className={`inline-flex min-h-11 items-center rounded-lg px-3 text-left md:flex md:w-full ${
                 tab === t
                   ? "bg-surface-raised font-medium text-accent-text"
                   : "hover:bg-control-hover hover:text-ink"
@@ -396,7 +396,7 @@ export function PainelApp({
               {t === "conversas" ? "Conversas" : t === "forage" ? "Forage" : "Configurações"}
             </button>
           ))}
-          <p className="mt-8 px-2 text-[10px] uppercase tracking-wider text-muted">Dispositivos</p>
+          <p className="mt-2 basis-full px-2 text-[10px] uppercase tracking-wider text-muted md:mt-8">Dispositivos</p>
           {devices.filter((d) => !d.revoked).length === 0 && (
             <p className="mt-1 px-2 leading-5">Nenhum PC pareado.</p>
           )}
@@ -407,7 +407,7 @@ export function PainelApp({
                 key={d.id}
                 type="button"
                 onClick={() => setDeviceId(d.id)}
-                className={`block w-full truncate rounded-lg px-2 text-left ${
+                className={`inline-flex min-h-11 w-full items-center truncate rounded-lg px-3 text-left ${
                   deviceId === d.id ? "bg-surface-raised text-ink" : "hover:text-ink"
                 }`}
               >
@@ -445,7 +445,7 @@ export function PainelApp({
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={online ? "Escreva para a YAMI…" : "A mensagem vai para a fila até o PC voltar"}
-                    className="field flex-1 rounded-[22px] px-4"
+                    className="field min-w-0 flex-1 rounded-[22px] px-4"
                   />
                   <button type="submit" className="btn-primary">
                     Enviar

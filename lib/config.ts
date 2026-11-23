@@ -69,10 +69,6 @@ export function getSiteUrl(): string {
   return "http://localhost:3000";
 }
 
-export function getItoolsUrl(): string {
-  return readEnv("ITOOLS_URL", "https://i-tools.shop").replace(/\/$/, "");
-}
-
 export function getMpAccessToken(): string {
   return readEnv("MP_ACCESS_TOKEN");
 }

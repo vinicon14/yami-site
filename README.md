@@ -3,10 +3,7 @@
 Site próprio da **YAMI — seu agente de IA** (aplicativo Windows):
 apresentação, compra por R$ 20,00 no Mercado Pago (Pix e cartão, pagamento
 único), licença, download com link que expira em 24 horas, conta e painel
-remoto.
-
-O i-Tools (https://i-tools.shop) apenas destaca a YAMI e aponta para este
-site. Compra, login, download e painel ficam **somente aqui**, com um único
+remoto. Compra, login, download e painel ficam neste site, com um único
 backend.
 
 ## Arquitetura
@@ -54,18 +51,17 @@ Tudo está documentado em `.env.example`. Em produção são obrigatórios:
 
 ## O que falta para ir ao ar (este repositório não faz sozinho)
 
-1. Revisar e, se quiser, mesclar o que estiver em PR no i-Tools.
-2. Hospedagem: a Vercel no plano gratuito, domínio `*.vercel.app`, está
+1. Hospedagem: a Vercel no plano gratuito, domínio `*.vercel.app`, está
    prevista. Um domínio próprio é decisão sua e não é comprado daqui.
-3. **Postgres** com faixa gratuita (Neon ou o Supabase que você já usa),
+2. **Postgres** com faixa gratuita (Neon ou o Supabase que você já usa),
    sem cartão se possível. Sem isso, pedidos não sobrevivem a um restart.
-4. **Instalador** hospedado de forma privada, em `YAMI_INSTALLER_URL`.
-5. **Relé** do painel: `RELAY_PROVIDER=postgres` no mesmo Neon, já
+3. **Instalador** hospedado de forma privada, em `YAMI_INSTALLER_URL`.
+4. **Relé** do painel: `RELAY_PROVIDER=postgres` no mesmo Neon, já
    implementado. Nada de conta extra. Integração do app:
    `desktop-client/INTEGRATION.md`.
-6. Textos de `/termos` e `/privacidade` estão marcados como rascunho.
-7. Capturas reais da YAMI no lugar dos espaços reservados.
-8. Cadastrar o webhook no painel do Mercado Pago e configurar
+5. Textos de `/termos` e `/privacidade` estão marcados como rascunho.
+6. Capturas reais da YAMI no lugar dos espaços reservados.
+7. Cadastrar o webhook no painel do Mercado Pago e configurar
    `MP_WEBHOOK_SECRET`: em produção a venda só abre com ele (junto com
    `MP_ACCESS_TOKEN`). A `notification_url` já vai em cada preferência e a
    confirmação é a consulta autenticada do pagamento; o segredo também habilita
