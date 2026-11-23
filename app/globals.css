@@ -883,3 +883,11 @@ html.lite-motion .reveal {
   line-height: 1.55;
   color: var(--color-ink-soft);
 }
+
+.iso-scroll {
+  white-space: pre;
+  overflow-x: auto;
+  overflow-wrap: normal;
+  word-break: normal;
+  -webkit-overflow-scrolling: touch;
+}
