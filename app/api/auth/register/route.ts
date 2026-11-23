@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth";
 import { getStore } from "@/lib/db";
 import { clientIp, isValidEmail, jsonError, sameOrigin } from "@/lib/http";
+import { takeSignupIpQuota } from "@/lib/quota";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,8 @@ export async function POST(req: Request) {
   if (await store.getUserByEmail(email)) {
     return jsonError("já existe uma conta com este e-mail", 409);
   }
+  const signup = await takeSignupIpQuota(store, clientIp(req));
+  if (!signup.ok) return jsonError(signup.code, 429);
   const user = await store.createUser({
     id: crypto.randomUUID(),
     email,

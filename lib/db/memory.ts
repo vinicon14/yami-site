@@ -1,4 +1,5 @@
 import type { ReleaseKind, ReleaseManifest } from "../release";
+import { assertSignupIpQuotaInput, assertUploadQuotaInput } from "./quota";
 import type {
   AuditEntry,
   Device,
@@ -575,6 +576,34 @@ export function createMemoryStore(): Store {
         if (report.appId === appId && report.status === "aberta") report.status = "resolvida";
       }
     },
+
+    consumeUploadQuota(input) {
+      assertUploadQuotaInput(input);
+      return exclusive(`upload:${input.userId}:${input.day}`, () => {
+        const key = `${input.userId}\0${input.day}`;
+        const current = uploadQuota.get(key) ?? { count: 0, bytes: 0 };
+        if (current.count + 1 > input.maxCount || current.bytes + input.bytes > input.maxBytes) {
+          return { ok: false as const, code: "cota_diaria_excedida" as const };
+        }
+        const next = { count: current.count + 1, bytes: current.bytes + input.bytes };
+        uploadQuota.set(key, next);
+        return { ok: true as const, count: next.count, bytes: next.bytes };
+      });
+    },
+
+    consumeSignupIpQuota(input) {
+      assertSignupIpQuotaInput(input);
+      return exclusive(`signup:${input.ip}:${input.day}`, () => {
+        const key = `${input.ip}\0${input.day}`;
+        const current = signupQuota.get(key) ?? 0;
+        if (current + 1 > input.maxCount) {
+          return { ok: false as const, code: "limite_ip_cadastro" as const };
+        }
+        const count = current + 1;
+        signupQuota.set(key, count);
+        return { ok: true as const, count };
+      });
+    },
   };
 
   const featureRequests = new Map<string, import("./types").FeatureRequest>();
@@ -584,6 +613,16 @@ export function createMemoryStore(): Store {
   const storeApps = new Map<string, StoreApp>();
   const storeVersions = new Map<string, StoreAppVersion>();
   const storeReports: StoreAppReport[] = [];
+  const uploadQuota = new Map<string, { count: number; bytes: number }>();
+  const signupQuota = new Map<string, number>();
+  const quotaLocks = new Map<string, Promise<unknown>>();
+
+  function exclusive<T>(key: string, fn: () => T): Promise<T> {
+    const previous = quotaLocks.get(key) ?? Promise.resolve();
+    const run = previous.then(fn, fn);
+    quotaLocks.set(key, run.then(() => undefined, () => undefined));
+    return run;
+  }
 
   return store;
 }

@@ -32,11 +32,11 @@ O catálogo de instalação devolve uma entrada por app:
 - SHA-256 do arquivo enviado é calculado no servidor. Se o cliente mandou outro, o envio é recusado. Windows só com link externo guarda o hash declarado (`sha256Source: "declarado"`); o cliente ainda confere ao baixar.
 - Tipo pelo nome e pela assinatura dos primeiros bytes (ELF, zstd, MZ, MSI ou ZIP) quando há arquivo.
 - O slug do nome pertence a uma pessoa. Outra conta não reutiliza. Só o dono publica versão maior.
-- No máximo 8 envios por conta a cada hora, no limitador em memória do processo.
+- Cota diária por conta, gravada no banco (`upload_quota`: usuário, dia UTC, quantidade e bytes). Cada autorização de upload e cada `POST /api/apps` consomem 1 envio e somam o tamanho do arquivo, na mesma linha, numa escrita só. O padrão é 10 envios e 2 GiB (2147483648 bytes). Um app Linux que sobe o arquivo e depois é publicado conta duas vezes; Windows só com URL externa conta uma vez, no envio. Esses tetos ainda precisam ser confirmados pelo dono.
 
 Linux privado é baixado por um link assinado de 30 minutos (`/api/apps/download`), que só entrega o Blob. Windows usa a URL externa e o botão **Baixar para Windows** (`actionLabel`). App Linux segue com **Instalar**.
 
-A coluna `app_platform` entra por `ADD COLUMN` (Postgres com `IF NOT EXISTS`; SQLite só se o `PRAGMA table_info` não achar a coluna). As tabelas `store_apps`, `store_app_versions` e `store_app_reports` são `CREATE TABLE IF NOT EXISTS`. Nada disso recria `feature_requests`.
+A coluna `app_platform` entra por `ADD COLUMN` (Postgres com `IF NOT EXISTS`; SQLite só se o `PRAGMA table_info` não achar a coluna). As tabelas `store_apps`, `store_app_versions`, `store_app_reports`, `upload_quota` e `signup_ip_quota` são `CREATE TABLE IF NOT EXISTS`. Nada disso recria `feature_requests` nem as outras tabelas já existentes.
 
 ### Segurança que continua sem fila humana para o autor
 
@@ -57,18 +57,23 @@ O botão antigo Publicada, se a solicitação já virou app, aprova esse app em 
 
 ## Variáveis de ambiente
 
-Nenhuma variável nova é obrigatória.
+Nenhuma variável nova é obrigatória. Sem elas valem os padrões abaixo. Os tetos de cota ainda precisam ser confirmados pelo dono antes de irem para produção.
 
-| Variável | Uso |
-|---|---|
-| `GITHUB_TOKEN` ou `GITHUB_RELEASE_TOKEN` | Publicar e retirar o asset e o `yami-apps.json` na release `v0.8.0` quando o app fica público. Sem o token, a aprovação pública falha e o app continua em revisão. O uso privado do autor não precisa dele. |
-| `BLOB_READ_WRITE_TOKEN` | Blob privado da Vercel, já usado no upload. |
-| `SESSION_SECRET` ou `AUTH_SECRET` | Assina o link de download do app que ainda não está no GitHub. |
-| `ADMIN_EMAILS` | Quem aprova, retira e bane. |
+| Variável | Padrão | Uso |
+|---|---|---|
+| `UPLOAD_QUOTA_DAILY_MAX` | `10` | Envios por usuário no dia UTC. Cada token de upload e cada `POST /api/apps` contam 1. |
+| `UPLOAD_QUOTA_DAILY_BYTES` | `2147483648` | Bytes por usuário no dia UTC (2 GiB). Soma o tamanho declarado no token e o tamanho aceito no envio. |
+| `SIGNUP_IP_DAILY_MAX` | `5` | Contas criadas por IP no dia UTC, na tabela `signup_ip_quota`. O padrão deixa uma rede compartilhada abrir algumas contas e impede criar uma conta nova para cada envio. O limitador em memória de 5 tentativas a cada 15 minutos continua, só nesta instância. |
+| `GITHUB_TOKEN` ou `GITHUB_RELEASE_TOKEN` |  | Publicar e retirar o asset e o `yami-apps.json` na release `v0.8.0` quando o app fica público. Sem o token, a aprovação pública falha e o app continua em revisão. O uso privado do autor não precisa dele. |
+| `BLOB_READ_WRITE_TOKEN` |  | Blob privado da Vercel, já usado no upload. |
+| `SESSION_SECRET` ou `AUTH_SECRET` |  | Assina o link de download do app que ainda não está no GitHub. |
+| `ADMIN_EMAILS` |  | Quem aprova, retira e bane. |
 
 ## Riscos que ficam
 
-- O limitador é por processo. Em várias instâncias da Vercel o teto de 8 envios por hora não é global.
+- Um arquivo Windows só com URL pode ter até 3 GiB, acima do teto diário padrão de 2 GiB. Com o padrão, esse envio responde `cota_diaria_excedida` até o dono subir `UPLOAD_QUOTA_DAILY_BYTES`.
+- A cota de upload é cobrada pelo tamanho declarado, e o token do Blob fica limitado a esse tamanho. Se a publicação falha depois da cobrança, o envio do dia não volta.
+- O cadastro ainda tem um freio de rajada em memória (5 tentativas a cada 15 minutos, por instância). O teto que vale entre instâncias é o diário no banco.
 - O link assinado de 30 minutos baixa o arquivo de quem o tiver. Ele só é entregue ao autor no catálogo.
 - Windows só com URL externa não tem o hash recalculado aqui. Quem baixa, inclusive o YAMI OS, tem de conferir o SHA-256. A revisão humana continua sendo a porta da loja pública.
 - Se a remoção do asset no GitHub falhar, a loja deixa de listar o app, mas a URL antiga do GitHub pode continuar válida até alguém apagar o asset.

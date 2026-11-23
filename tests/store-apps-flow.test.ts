@@ -87,6 +87,9 @@ describe("loja com publicação para o autor e revisão pública", () => {
     setBlobInspectorForTests(null);
     setStoreAppPublisherForTests(null);
     delete process.env.ADMIN_EMAILS;
+    delete process.env.UPLOAD_QUOTA_DAILY_MAX;
+    delete process.env.UPLOAD_QUOTA_DAILY_BYTES;
+    delete process.env.SIGNUP_IP_DAILY_MAX;
   });
 
   it("exige sessão e manda o cliente conferir o sha256", async () => {
@@ -167,13 +170,12 @@ describe("loja com publicação para o autor e revisão pública", () => {
     expect((await mismatch.json()).error).toBe("sha256_divergente");
 
     setBlobInspectorForTests(async () => ({ sha256: SHA, size: 1200, magicHex: "7f454c46" }));
-    resetRateLimits();
-    for (let n = 0; n < 8; n += 1) {
-      const res = await appsPost(post("/api/apps", authorCookie, { ...linuxBody, name: `App ${n} extra`, version: "1.0.0" }));
-      expect(res.status).toBe(201);
-    }
+    process.env.UPLOAD_QUOTA_DAILY_MAX = "2";
+    const again = await appsPost(post("/api/apps", authorCookie, { ...linuxBody, name: "App extra", version: "1.0.0" }));
+    expect(again.status).toBe(201);
     const limited = await appsPost(post("/api/apps", authorCookie, { ...linuxBody, name: "App estoura", version: "1.0.0" }));
     expect(limited.status).toBe(429);
+    expect((await limited.json()).error).toBe("cota_diaria_excedida");
   });
 
   it("publica Windows com download externo e o botão Baixar para Windows", async () => {

@@ -4,7 +4,7 @@ import { getStore } from "@/lib/db";
 import { getSessionUser, readSessionCookie } from "@/lib/auth";
 import { desktopSession } from "@/app/api/desktop/_shared";
 import { clientIp, jsonError, sameOrigin } from "@/lib/http";
-import { rateLimit } from "@/lib/rate-limit";
+import { takeUploadQuota } from "@/lib/quota";
 import { validateAppFile } from "@/lib/app-submissions";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +25,6 @@ export async function POST(req: Request) {
   const store = await getStore();
   const account = await store.getUserById(current.userId);
   if (account?.status === "bloqueado") return jsonError("conta bloqueada", 403);
-  const limited = rateLimit(`app-upload:${current.userId}`, 20, 60 * 60 * 1000);
-  if (!limited.ok) return jsonError("muitas tentativas", 429);
 
   let body: HandleUploadBody;
   try { body = (await req.json()) as HandleUploadBody; } catch { return jsonError("pedido inválido", 400); }
@@ -44,9 +42,13 @@ export async function POST(req: Request) {
           platform: raw.platform === "windows" ? "windows" : "linux",
         });
         if (!check.ok) throw new Error(check.reason);
+        const size = Number(raw.size);
+        if (!Number.isSafeInteger(size)) throw new Error("tamanho_invalido");
+        const quota = await takeUploadQuota(store, current.userId, size);
+        if (!quota.ok) throw new Error(quota.code);
         return {
           allowedContentTypes: ["application/octet-stream", "application/x-executable"],
-          maximumSizeInBytes: 500 * 1024 * 1024,
+          maximumSizeInBytes: size,
           addRandomSuffix: false,
           allowOverwrite: false,
           cacheControlMaxAge: 31536000,
@@ -56,6 +58,8 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(result);
   } catch (err) {
-    return jsonError(err instanceof Error ? err.message : "não foi possível autorizar o envio", 400);
+    const message = err instanceof Error ? err.message : "não foi possível autorizar o envio";
+    if (message === "cota_diaria_excedida") return jsonError(message, 429);
+    return jsonError(message, 400);
   }
 }

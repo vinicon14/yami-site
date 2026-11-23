@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { QUOTA_TABLES_SQL } from "./quota-sql";
 import { parseReleaseFile, isReleaseKind } from "../release";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -262,7 +263,7 @@ CREATE TABLE IF NOT EXISTS store_app_reports (
 CREATE INDEX IF NOT EXISTS idx_store_apps_owner ON store_apps (owner_user_id, visibility);
 CREATE INDEX IF NOT EXISTS idx_store_app_versions_app ON store_app_versions (app_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_store_app_reports_status ON store_app_reports (status, created_at);
-`;
+` + QUOTA_TABLES_SQL;
 
 export function loadSchemaFromFile(): string {
   try {

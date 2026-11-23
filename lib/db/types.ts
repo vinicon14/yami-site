@@ -204,6 +204,30 @@ export type UserNotification = {
   expiresAt: string | null;
 };
 
+export type UploadQuotaInput = {
+  userId: string;
+  /** Dia UTC `YYYY-MM-DD`. */
+  day: string;
+  bytes: number;
+  maxCount: number;
+  maxBytes: number;
+};
+
+export type UploadQuotaResult =
+  | { ok: true; count: number; bytes: number }
+  | { ok: false; code: "cota_diaria_excedida" };
+
+export type SignupIpQuotaInput = {
+  ip: string;
+  /** Dia UTC `YYYY-MM-DD`. */
+  day: string;
+  maxCount: number;
+};
+
+export type SignupIpQuotaResult =
+  | { ok: true; count: number }
+  | { ok: false; code: "limite_ip_cadastro" };
+
 export type PaymentEvent = {
   id: string;
   orderId: string | null;
@@ -310,6 +334,8 @@ export interface Store {
   createStoreAppReport(report: StoreAppReport): Promise<StoreAppReport>;
   listStoreAppReports(appId?: string): Promise<StoreAppReport[]>;
   resolveStoreAppReports(appId: string): Promise<void>;
+  consumeUploadQuota(input: UploadQuotaInput): Promise<UploadQuotaResult>;
+  consumeSignupIpQuota(input: SignupIpQuotaInput): Promise<SignupIpQuotaResult>;
   createUserNotification(input: Omit<UserNotification, "id" | "readAt" | "createdAt"> & { createdAt?: string }): Promise<UserNotification>;
   listUserNotifications(userId: string, limit?: number): Promise<UserNotification[]>;
   markNotificationRead(id: string, userId: string): Promise<boolean>;

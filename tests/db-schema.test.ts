@@ -4,7 +4,7 @@ import type { Store } from "../lib/db/types";
 
 describe("schema ampliado", () => {
   it("contém tabelas de solicitações, avisos e eventos de pagamento", () => {
-    for (const table of ["feature_requests", "feature_request_events", "user_notifications", "payment_events"]) {
+    for (const table of ["feature_requests", "feature_request_events", "user_notifications", "payment_events", "upload_quota", "signup_ip_quota"]) {
       expect(SCHEMA_SQL).toContain(`CREATE TABLE IF NOT EXISTS ${table}`);
     }
   });
