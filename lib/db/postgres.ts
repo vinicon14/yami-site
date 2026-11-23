@@ -47,6 +47,10 @@ ALTER TABLE pairings ADD COLUMN IF NOT EXISTS email_sent_at TEXT;
 ALTER TABLE pairings ADD COLUMN IF NOT EXISTS confirmed_at TEXT;
 `;
 
+const POSTGRES_APP_PLATFORM = `
+ALTER TABLE feature_requests ADD COLUMN IF NOT EXISTS app_platform TEXT;
+`;
+
 export async function getPostgresClient(url: string): Promise<Sql> {
   if (clientSingleton && clientSingleton.url === url) return clientSingleton.sql;
   const postgres = (await import("postgres")).default;
@@ -79,6 +83,7 @@ export async function getPostgresStore(url: string): Promise<Store> {
 async function ensureSchema(sql: Sql): Promise<void> {
   await sql.unsafe(SCHEMA_SQL);
   await sql.unsafe(POSTGRES_PAIRING_EMAIL_COLUMNS);
+  await sql.unsafe(POSTGRES_APP_PLATFORM);
   try {
     await sql.unsafe(POSTGRES_RELAY_JSONB);
   } catch (err) {
@@ -440,8 +445,14 @@ function wrap(sql: Sql): Store {
       const id = crypto.randomUUID();
       await sql`
         INSERT INTO feature_requests
-          (id, user_id, title, description, category, status, published_version, admin_note, created_at, updated_at)
-        VALUES (${id}, ${input.userId}, ${input.title}, ${input.description}, ${input.category}, 'pendente', NULL, NULL, ${now}, ${now})
+          (id, user_id, title, description, category, status, published_version, admin_note,
+           file_name, file_size, file_sha256, file_blob_pathname, app_version, app_icon, app_platform,
+           published_asset_url, published_at, created_at, updated_at)
+        VALUES (${id}, ${input.userId}, ${input.title}, ${input.description}, ${input.category},
+                'pendente', NULL, NULL, ${input.fileName ?? null}, ${input.fileSize ?? null},
+                ${input.fileSha256 ?? null}, ${input.fileBlobPathname ?? null}, ${input.appVersion ?? null},
+                ${input.appIcon ?? null}, ${input.appPlatform === "windows" ? "windows" : "linux"},
+                NULL, NULL, ${now}, ${now})
       `;
       return (await this.getFeatureRequest(id))!;
     },

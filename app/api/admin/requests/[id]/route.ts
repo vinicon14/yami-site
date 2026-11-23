@@ -37,6 +37,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         description: current.description,
         category: current.category,
         icon: current.appIcon,
+        platform: current.appPlatform,
       });
       const item = await transitionRequest(store, {
         id,

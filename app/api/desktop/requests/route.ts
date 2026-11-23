@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       title: String(body.title ?? ""),
       description: String(body.description ?? ""),
       category: String(body.category ?? ""),
+      appPlatform: body.platform === "windows" || body.appPlatform === "windows" ? "windows" : "linux",
     });
     return NextResponse.json(item, { status: 201 });
   } catch (error) {

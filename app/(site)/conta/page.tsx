@@ -3,6 +3,9 @@ import { getStore } from "@/lib/db";
 import { toPublicFeatureRequest } from "@/lib/feature-requests";
 import { AccountPanel } from "@/components/AccountPanel";
 import { FeatureRequestsPanel } from "@/components/FeatureRequestsPanel";
+import { PublishedAppsList } from "@/components/PublishedAppsList";
+import { toCatalogApps } from "@/lib/apps-catalog";
+import { userHasPaidLicense } from "@/lib/license-gate";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -25,6 +28,8 @@ export default async function ContaPage() {
   const devices = await store.listDevices(current.user.id);
   const audit = await store.listAudit(current.user.id, 20);
   const requests = await store.listFeatureRequests(current.user.id);
+  const licensed = await userHasPaidLicense(current.user.email, store);
+  const apps = licensed ? toCatalogApps(await store.listFeatureRequests()) : [];
 
   return (
     <article className="mx-auto max-w-2xl px-5 py-12 md:px-8 md:py-16">
@@ -61,6 +66,7 @@ export default async function ContaPage() {
           meta: a.meta,
         }))}
       />
+      {licensed ? <PublishedAppsList apps={apps} /> : null}
       <FeatureRequestsPanel items={requests.map(toPublicFeatureRequest)} />
     </article>
   );

@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS feature_requests (
   file_blob_pathname TEXT,
   app_version TEXT,
   app_icon TEXT,
+  app_platform TEXT,
   published_asset_url TEXT,
   published_at TEXT,
   created_at TEXT NOT NULL,

@@ -1,12 +1,14 @@
 import Link from "next/link";
-import manifest from "@/lib/yamios/latest.json";
+import rawManifest from "@/lib/yamios/latest.json";
 import { renderInstallCommands } from "@/lib/install-page";
+import { toPublicManifest } from "@/lib/yamios/public-manifest";
 
 export const dynamic = "force-static";
 
 export default function InstalarYamiOsPage() {
+  const manifest = toPublicManifest(rawManifest);
   const iso = manifest.iso;
-  const parts = (iso.partes ?? []) as Array<{ url: string; sha256: string; tamanho: number }>;
+  const parts = iso.partes;
   const commands = renderInstallCommands(parts.length);
   const hasParts = parts.length > 0;
 
