@@ -50,8 +50,7 @@ export default function PrivacidadePage() {
         </p>
         <h2>Contato</h2>
         <p>
-          Para pedidos relacionados a estes dados, use os canais de contato do i-Tools
-          ou o e-mail informado na compra.
+          Para pedidos relacionados a estes dados, use o e-mail informado na compra.
         </p>
       </div>
     </article>

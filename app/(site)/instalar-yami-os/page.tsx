@@ -27,13 +27,13 @@ export default function InstalarYamiOsPage() {
       <section className="card mt-6 p-5">
         <p className="kicker">Downloads</p>
         {hasParts ? (
-          <ul className="mt-3 space-y-2 text-sm">
+          <ul className="mt-3 space-y-3 text-sm">
             {parts.map((part, index) => (
               <li key={part.url}>
-                <a className="text-accent-text underline underline-offset-2" href={part.url}>
+                <a className="inline-flex min-h-11 items-center text-accent-text underline underline-offset-2" href={part.url}>
                   Parte {index + 1} ({Math.round(part.tamanho / 1024 / 1024)} MB)
                 </a>
-                <span className="ml-2 font-mono text-xs text-muted">{part.sha256}</span>
+                <p className="break-all font-mono text-xs leading-relaxed text-muted">{part.sha256}</p>
               </li>
             ))}
           </ul>
@@ -51,7 +51,7 @@ export default function InstalarYamiOsPage() {
       </section>
 
       <p className="mt-8 text-sm">
-        <Link href="/checkout" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
+        <Link href="/checkout" className="inline-flex min-h-11 items-center text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Comprar a YAMI
         </Link>
       </p>

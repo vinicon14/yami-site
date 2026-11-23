@@ -17,7 +17,7 @@ export default function FaqPage() {
   const items = [
     {
       q: "O que é a YAMI?",
-      a: "É um assistente de IA que roda no seu Windows. Conversas, arquivos e histórico ficam no seu computador. É a ferramenta principal do i-Tools.",
+      a: "É um assistente de IA que roda no seu Windows. Conversas, arquivos e histórico ficam no seu computador.",
     },
     {
       q: "Em quais sistemas ela roda?",
@@ -60,12 +60,11 @@ export default function FaqPage() {
           </div>
         ))}
       </dl>
-      <p className="mt-12 text-sm">
-        <Link href="/requisitos" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
+      <p className="mt-12 flex flex-wrap gap-x-6 text-sm">
+        <Link href="/requisitos" className="inline-flex min-h-11 items-center text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Ver requisitos
         </Link>
-        {" · "}
-        <Link href="/termos" className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
+        <Link href="/termos" className="inline-flex min-h-11 items-center text-accent-text underline underline-offset-2 hover:text-accent-hover">
           Termos
         </Link>
       </p>

@@ -3,7 +3,7 @@ import { getSiteUrl } from "@/lib/config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = getSiteUrl();
-  const paths = ["", "/precos", "/faq", "/requisitos", "/termos", "/privacidade"];
+  const paths = ["", "/precos", "/faq", "/requisitos", "/instalar-yami-os", "/termos", "/privacidade"];
   return paths.map((path) => ({
     url: `${base}${path || "/"}`,
     changeFrequency: "weekly" as const,

@@ -24,7 +24,7 @@ export function YamiWordmark({
     </>
   );
 
-  const cls = `inline-flex items-center gap-2.5 text-ink ${className}`;
+  const cls = `inline-flex min-h-11 items-center gap-2.5 text-ink ${className}`;
   if (href) {
     return (
       <Link href={href} className={cls} aria-label="YAMI, página inicial">

@@ -1,53 +1,51 @@
 import Link from "next/link";
-import { getItoolsUrl } from "@/lib/config";
 import { YamiWordmark } from "./YamiWordmark";
 
 export function SiteFooter() {
-  const itools = getItoolsUrl();
   return (
     <footer className="mt-auto border-t border-line bg-frame text-ink">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 md:grid-cols-3 md:px-8">
         <div>
           <YamiWordmark href="/" size={32} />
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted">
-            Seu agente de IA para Windows. Roda no seu computador. Também é a
-            ferramenta principal do{" "}
-            <a href={itools} className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
-              i-Tools
-            </a>
-            .
+            Seu agente de IA para Windows. Roda no seu computador.
           </p>
         </div>
         <div>
           <p className="kicker">Páginas</p>
-          <ul className="mt-3 space-y-2 text-sm text-ink-soft">
+          <ul className="mt-3 space-y-1 text-sm text-ink-soft">
             <li>
-              <Link href="/precos" className="hover:text-ink">
+              <Link href="/precos" className="footer-link">
                 Preços
               </Link>
             </li>
             <li>
-              <Link href="/faq" className="hover:text-ink">
+              <Link href="/instalar-yami-os" className="footer-link">
+                Instalar o YAMI OS
+              </Link>
+            </li>
+            <li>
+              <Link href="/faq" className="footer-link">
                 Perguntas frequentes
               </Link>
             </li>
             <li>
-              <Link href="/requisitos" className="hover:text-ink">
+              <Link href="/requisitos" className="footer-link">
                 Requisitos
               </Link>
             </li>
             <li>
-              <Link href="/painel" className="hover:text-ink">
+              <Link href="/painel" className="footer-link">
                 Painel remoto
               </Link>
             </li>
             <li>
-              <Link href="/termos" className="hover:text-ink">
+              <Link href="/termos" className="footer-link">
                 Termos de uso
               </Link>
             </li>
             <li>
-              <Link href="/privacidade" className="hover:text-ink">
+              <Link href="/privacidade" className="footer-link">
                 Privacidade
               </Link>
             </li>
@@ -55,13 +53,7 @@ export function SiteFooter() {
         </div>
         <div className="text-sm leading-relaxed text-muted">
           <p className="kicker">Contato</p>
-          <p className="mt-3">
-            Um produto de Vinicius Marques, também no{" "}
-            <a href={itools} className="text-accent-text underline underline-offset-2 hover:text-accent-hover">
-              i-tools.shop
-            </a>
-            .
-          </p>
+          <p className="mt-3">Um produto de Vinicius Marques.</p>
           <p className="mt-3 text-xs text-muted/80">
             Textos legais em rascunho, sujeitos a revisão antes da venda em volume.
           </p>

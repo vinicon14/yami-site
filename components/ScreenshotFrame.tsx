@@ -2,14 +2,16 @@ export function ScreenshotFrame({
   title = "YAMI",
   caption,
   children,
+  tilt = false,
 }: {
   title?: string;
   caption: string;
   children?: React.ReactNode;
+  tilt?: boolean;
 }) {
   return (
     <figure className="w-full">
-      <div className="window-chrome">
+      <div className="window-chrome" data-tilt={tilt ? "" : undefined}>
         <div className="flex items-center gap-3 border-b border-line bg-frame px-3 py-2">
           <img
             src="/yami-logo.svg"
