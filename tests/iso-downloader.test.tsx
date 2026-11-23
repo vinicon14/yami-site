@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { IsoDownloader } from "../components/IsoDownloader";
+import { YamiOsPromo } from "../components/YamiOsPromo";
 import raw from "../lib/yamios/latest.json";
 import { YAMI_OS_ISO_SOON, YAMI_OS_NAME, yamiOsPromoCopy } from "../lib/yamios/brand";
 import { releaseAssetUrl } from "../lib/yamios/public-manifest";
@@ -41,8 +42,36 @@ describe("baixador gratuito da ISO", () => {
   it("mantém o nome oficial numa constante", () => {
     expect(YAMI_OS_NAME).toBe("YAMI OS");
     expect(raw.produto).toBe(YAMI_OS_NAME);
-    expect(yamiOsPromoCopy().title).toBe("O YAMI OS é de graça para baixar");
-    expect(yamiOsPromoCopy().windowsOffer).toContain("pagar para usar a YAMI no Windows");
+    expect(yamiOsPromoCopy(false).windowsOffer).toContain("pagar para usar a YAMI no Windows");
+    expect(yamiOsPromoCopy(true).windowsOffer).toContain("pagar para usar a YAMI no Windows");
+  });
+
+  it("não promete download grátis enquanto a versão for menor que 1.1.0", () => {
+    expect(isVersionAtLeast(raw.versao, "1.1.0")).toBe(false);
+    expect(yamiOsPromoCopy(false).title).toBe("O YAMI OS vai ser grátis a partir da versão 1.1.0");
+    expect(yamiOsPromoCopy(false).title).not.toContain("de graça para baixar");
+
+    const html = renderToStaticMarkup(<YamiOsPromo source={raw} />);
+    expect(html).toContain("O YAMI OS vai ser grátis a partir da versão 1.1.0");
+    expect(html).not.toContain("de graça para baixar");
+    expect(html).toContain("pagar para usar a YAMI no Windows");
+    expect(html).toContain('data-iso-offer="soon"');
+    expect(html).toContain("Em breve na versão 1.1.0");
+    const soon = html.slice(html.indexOf('data-iso-offer="soon"'));
+    expect(soon).not.toMatch(/gratuito|grátis|de graça/i);
+    expect(soon).not.toMatch(/<a[\s>]/);
+  });
+
+  it("diz que é de graça para baixar a partir da 1.1.0", () => {
+    const source = readyManifest();
+    expect(yamiOsPromoCopy(true).title).toBe("O YAMI OS é de graça para baixar");
+
+    const html = renderToStaticMarkup(<YamiOsPromo source={source} />);
+    expect(html).toContain("O YAMI OS é de graça para baixar");
+    expect(html).not.toContain("vai ser grátis");
+    expect(html).toContain("Download gratuito");
+    expect(html).toContain("Não pede licença");
+    expect(html).toContain('data-iso-offer="ready"');
   });
 
   it("fica desativado na 1.0.0, sem link", () => {
@@ -53,6 +82,7 @@ describe("baixador gratuito da ISO", () => {
 
     const html = renderToStaticMarkup(<IsoDownloader source={raw} />);
     expect(html.toLowerCase()).toContain("em breve na versão 1.1.0");
+    expect(html).not.toMatch(/gratuito|grátis|de graça/i);
     expect(html).not.toMatch(/<a[\s>]/);
     expect(html).not.toContain("href=");
     expect(html).toContain('data-iso-offer="soon"');

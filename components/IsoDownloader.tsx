@@ -11,7 +11,7 @@ export function IsoDownloader({ source }: { source: IsoManifestSource }) {
   if (!offer.active) {
     return (
       <div className="card iso-offer p-5" data-iso-offer="soon">
-        <p className="kicker">Download gratuito</p>
+        <p className="kicker">Download da ISO</p>
         <p className="mt-3 text-lg font-semibold tracking-tight text-balance">
           Em breve na versão {YAMI_OS_FREE_ISO_FROM}.
         </p>
