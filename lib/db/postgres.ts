@@ -475,10 +475,16 @@ function wrap(sql: Sql): Store {
       const now = nowIso();
       const publishedVersion =
         input.publishedVersion === undefined ? current.publishedVersion : input.publishedVersion;
+      const publishedAssetUrl =
+        input.publishedAssetUrl === undefined ? current.publishedAssetUrl : input.publishedAssetUrl;
+      const publishedAt = input.publishedAssetUrl === undefined ? current.publishedAt : (input.publishedAssetUrl ? now : null);
       await sql`
         UPDATE feature_requests SET status = ${input.toStatus},
           published_version = ${publishedVersion},
-          admin_note = ${input.note ?? current.adminNote}, updated_at = ${now}
+          admin_note = ${input.note ?? current.adminNote},
+          published_asset_url = ${publishedAssetUrl},
+          published_at = ${publishedAt},
+          updated_at = ${now}
         WHERE id = ${input.id}
       `;
       await sql`

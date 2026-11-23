@@ -429,6 +429,8 @@ export function createMemoryStore(): Store {
       r.status = input.toStatus;
       r.updatedAt = nowIso();
       if (input.publishedVersion !== undefined) r.publishedVersion = input.publishedVersion;
+      if (input.publishedAssetUrl !== undefined) r.publishedAssetUrl = input.publishedAssetUrl;
+      if (input.publishedAssetUrl !== undefined) r.publishedAt = input.publishedAssetUrl ? nowIso() : r.publishedAt;
       if (input.note !== undefined && input.note !== null) r.adminNote = input.note;
       requestEvents.push({
         id: crypto.randomUUID(),

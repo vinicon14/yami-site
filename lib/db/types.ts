@@ -248,7 +248,7 @@ export interface Store {
   listFeatureRequests(userId?: string): Promise<FeatureRequest[]>;
   getFeatureRequest(id: string): Promise<FeatureRequest | null>;
   updateFeatureRequest(input: { id: string; userId: string; title: string; description: string; category: string }): Promise<FeatureRequest | null>;
-  transitionFeatureRequest(input: { id: string; actorUserId: string; actorRole: "user" | "admin"; toStatus: FeatureRequestStatus; note?: string | null; publishedVersion?: string | null; }): Promise<FeatureRequest | null>;
+  transitionFeatureRequest(input: { id: string; actorUserId: string; actorRole: "user" | "admin"; toStatus: FeatureRequestStatus; note?: string | null; publishedVersion?: string | null; publishedAssetUrl?: string | null; }): Promise<FeatureRequest | null>;
   createUserNotification(input: Omit<UserNotification, "id" | "readAt" | "createdAt"> & { createdAt?: string }): Promise<UserNotification>;
   listUserNotifications(userId: string, limit?: number): Promise<UserNotification[]>;
   markNotificationRead(id: string, userId: string): Promise<boolean>;
