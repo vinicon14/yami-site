@@ -62,15 +62,15 @@ describe("baixador gratuito da ISO", () => {
 
   it("não promete download grátis enquanto a versão for menor que 1.1.0", () => {
     expect(isVersionAtLeast(beforeFree.versao, "1.1.0")).toBe(false);
-    expect(yamiOsPromoCopy(false).title).toBe("O YAMI OS vai ser grátis a partir da versão 1.1.0");
+    expect(yamiOsPromoCopy(false).title).toBe("O download gratuito do YAMI OS estará disponível em breve");
     expect(yamiOsPromoCopy(false).title).not.toContain("de graça para baixar");
 
     const html = renderToStaticMarkup(<YamiOsPromo source={beforeFree} />);
-    expect(html).toContain("O YAMI OS vai ser grátis a partir da versão 1.1.0");
+    expect(html).toContain("O download gratuito do YAMI OS estará disponível em breve");
     expect(html).not.toContain("de graça para baixar");
     expect(html).toContain("pagar para usar a YAMI no Windows");
     expect(html).toContain('data-iso-offer="soon"');
-    expect(html).toContain("Em breve na versão 1.1.0");
+    expect(html).toContain("A ISO ainda não está disponível para download.");
     const soon = html.slice(html.indexOf('data-iso-offer="soon"'));
     expect(soon).not.toMatch(/gratuito|grátis|de graça/i);
     expect(soon).not.toMatch(/<a[\s>]/);
@@ -95,53 +95,32 @@ describe("baixador gratuito da ISO", () => {
     expect(offer.message).toBe(YAMI_OS_ISO_SOON);
 
     const html = renderToStaticMarkup(<IsoDownloader source={beforeFree} />);
-    expect(html.toLowerCase()).toContain("em breve na versão 1.1.0");
+    expect(html).toContain("A ISO ainda não está disponível para download.");
     expect(html).not.toMatch(/gratuito|grátis|de graça/i);
     expect(html).not.toMatch(/<a[\s>]/);
     expect(html).not.toContain("href=");
     expect(html).toContain('data-iso-offer="soon"');
   });
 
-  it("libera a 1.1.0 publicada nos assets públicos, sem Em breve", () => {
+  it("não anuncia a ISO 1.1.0 enquanto a Release oficial não existe", () => {
     expect(raw.versao).toBe("1.1.0");
-    expect(raw.iso.sha256).toBe("71457f1d3a3a009854827869abf97b48c93b08b5c254e6582e369c297097c342");
-    expect(raw.iso.tamanho).toBe(3318644736);
-    expect(raw.iso.partes.map((part) => part.url)).toEqual([
-      "https://github.com/vinicon14/yamios-releases/releases/download/v1.1.0/yami-os-1.1.0.iso.parte01",
-      "https://github.com/vinicon14/yamios-releases/releases/download/v1.1.0/yami-os-1.1.0.iso.parte02",
-    ]);
-    expect(raw.iso.partes.map((part) => [part.sha256, part.tamanho])).toEqual([
-      ["0aebf7133b646b6a23c3010d869f3d3269c40759ed428dfaa4e0d0c734609ec3", 1992294400],
-      ["2c6342a006b4cd9665bced5426af95945ca03fb05503f0b2be7cfb7b08e5b847", 1326350336],
-    ]);
+    expect(raw.iso.partes).toEqual([]);
+    expect(raw.iso.sha256).toBe("");
+    expect(raw.iso.tamanho).toBe(0);
 
     const offer = resolveFreeIsoDownload(raw);
-    expect(offer.active).toBe(true);
-    if (!offer.active) return;
-    expect(offer.version).toBe("1.1.0");
-    expect(offer.sha256).toBe(raw.iso.sha256);
-    expect(offer.parts.map((part) => part.href)).toEqual(raw.iso.partes.map((part) => part.url));
+    expect(offer.active).toBe(false);
 
     const promo = renderToStaticMarkup(<YamiOsPromo source={raw} />);
-    expect(promo).toContain("O YAMI OS é de graça para baixar");
-    expect(promo).toContain("pagar para usar a YAMI no Windows");
-    expect(promo).toContain('data-iso-offer="ready"');
-    expect(promo).not.toContain("Em breve na versão");
-    expect(promo).not.toContain("vai ser grátis");
+    expect(promo).toContain("O download gratuito do YAMI OS estará disponível em breve");
+    expect(promo).toContain('data-iso-offer="soon"');
+    expect(promo).not.toContain("Download gratuito");
+    expect(promo).not.toContain("de graça para baixar");
     expect(promo).not.toContain("/api/yamios/iso");
-    const promoCard = promo.slice(promo.indexOf('data-iso-offer="ready"'));
-    expect(promoCard).not.toContain("Em breve");
-    expect(promoCard).toContain("Download gratuito");
-    for (const part of raw.iso.partes) expect(promoCard).toContain(part.url);
 
-    const home = renderToStaticMarkup(<HomePage />);
-    const offerStart = home.indexOf('data-iso-offer="ready"');
-    expect(offerStart).toBeGreaterThan(-1);
-    expect(home).not.toContain('data-iso-offer="soon"');
-    const card = home.slice(offerStart, home.indexOf("iso-commands", offerStart) + "iso-commands".length);
-    expect(card).toContain(raw.iso.partes[0].url);
-    expect(card).toContain(raw.iso.partes[1].url);
-    expect(card).not.toContain("Em breve");
+    const page = renderToStaticMarkup(<IsoDownloader source={raw} />);
+    expect(page).toContain("A ISO ainda não está disponível para download.");
+    expect(page).not.toContain("href=");
   });
 
   it("não libera a 1.1.0 se a ISO ainda aponta para o caminho com licença", () => {
