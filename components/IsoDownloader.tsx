@@ -28,9 +28,15 @@ export function IsoDownloader({ source }: { source: IsoManifestSource }) {
         ISO {offer.version} do {YAMI_OS_NAME}. Não pede licença.
       </p>
       <p className="mt-3 text-sm">Tamanho da ISO: {formatByteSize(offer.tamanho)}</p>
-      <p className="iso-hash mt-1 font-mono text-xs leading-relaxed text-muted">
-        SHA-256 da ISO: {offer.sha256}
-      </p>
+      {offer.sha256 ? (
+        <p className="iso-hash mt-1 font-mono text-xs leading-relaxed text-muted">
+          SHA-256 da ISO: {offer.sha256}
+        </p>
+      ) : (
+        <p className="mt-1 text-xs leading-relaxed text-muted">
+          O GitHub publica o SHA-256 de cada parte; o SHA-256 da ISO montada não foi informado.
+        </p>
+      )}
       <ul className="mt-4 space-y-4 text-sm">
         {offer.parts.map((part) => (
           <li key={`${part.index}-${part.fileName}`} className="min-w-0">
