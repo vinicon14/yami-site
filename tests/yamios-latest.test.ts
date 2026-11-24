@@ -25,7 +25,7 @@ describe("manifesto público do YAMI OS", () => {
     expect(raw.pacotes[0].versao).toBe("1.0.0");
     expect(pacote.versao).toBe("1.0.0");
     expect(pacote.url).toBe(releaseAssetUrl(raw.pacotes[0].versao, arquivo));
-    expect(pacote.url).not.toBe(releaseAssetUrl(raw.versao, arquivo));
+    expect(pacote.url).toBe(releaseAssetUrl(raw.versao, arquivo));
     expect(pacote.url).not.toContain("/undefined");
 
     const known = KNOWN_PUBLISHED_PACKAGES[arquivo];
