@@ -11,7 +11,7 @@ export const runtime = "nodejs";
  */
 export async function GET(_req: Request, ctx: { params: Promise<{ part: string }> }) {
   const { part } = await ctx.params;
-  if (!/^[1-9]\\d*$/.test(part)) {
+  if (!/^[1-9][0-9]*$/.test(part)) {
     return NextResponse.json({ error: "parte_invalida" }, { status: 404 });
   }
 
