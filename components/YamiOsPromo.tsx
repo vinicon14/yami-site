@@ -3,11 +3,11 @@ import { BuyButton } from "@/components/BuyButton";
 import { IsoDownloader } from "@/components/IsoDownloader";
 import { formatPriceBrl } from "@/lib/config";
 import { ACCEPTED_PAYMENT_COPY } from "@/lib/mp-checkout";
-import { YAMI_OS_FREE_ISO_FROM, YAMI_OS_NAME, yamiOsPromoCopy } from "@/lib/yamios/brand";
-import { isVersionAtLeast, type IsoManifestSource } from "@/lib/yamios/iso-downloader";
+import { YAMI_OS_NAME, yamiOsPromoCopy } from "@/lib/yamios/brand";
+import { resolveFreeIsoDownload, type IsoManifestSource } from "@/lib/yamios/iso-downloader";
 
 export function YamiOsPromo({ source }: { source: IsoManifestSource }) {
-  const copy = yamiOsPromoCopy(isVersionAtLeast(source.versao, YAMI_OS_FREE_ISO_FROM));
+  const copy = yamiOsPromoCopy(resolveFreeIsoDownload(source).active);
   const price = formatPriceBrl();
 
   return (

@@ -38,7 +38,10 @@ describe("manifesto público do YAMI OS", () => {
     expect(body.pacotes[0].descricao).not.toMatch(/greeter|LightDM|Criar apps/i);
     expect(body.notas.join("\n")).toContain("LightDM");
     expect(body.notas.join("\n")).not.toMatch(/greeter|Criar apps/i);
-    expect(body.iso.observacao).toBe("ISO 1.1.0 completa em duas partes, gratis para baixar.");
+    expect(body.iso.observacao).toContain("ainda não foi publicada");
+    expect(body.iso.partes).toEqual([]);
+    expect(body.iso.sha256).toBe("");
+    expect(body.iso.tamanho).toBe(0);
   });
 
   it("não publica URL com arquivo undefined nem anuncia sha divergente do asset conhecido", () => {
@@ -87,19 +90,23 @@ describe("manifesto público do YAMI OS", () => {
     );
   });
 
-  it("mantém a ISO só no caminho com licença", async () => {
+  it("não expõe partes inexistentes e o endpoint legado responde sem arquivo", async () => {
     const res = await latestGet();
     const body = await res.json();
-    expect(body.iso.partes.map((part: { url: string }) => part.url)).toEqual([
-      "/api/yamios/iso/1",
-      "/api/yamios/iso/2",
-    ]);
+    expect(body.iso.partes).toEqual([]);
     expect(JSON.stringify(body.iso)).not.toContain("github.com");
-    expect(JSON.stringify(body)).not.toMatch(/https?:\/\/[^"]+\.iso/);
+    expect(JSON.stringify(body.iso)).not.toContain("/api/yamios/iso");
 
     const iso = await isoGet(new Request("http://localhost/api/yamios/iso/1"), {
       params: Promise.resolve({ part: "1" }),
     });
-    expect(iso.status).toBe(401);
+    expect(iso.status).toBe(404);
+    expect(await iso.json()).toEqual({ error: "parte_indisponivel" });
+
+    const invalid = await isoGet(new Request("http://localhost/api/yamios/iso/nope"), {
+      params: Promise.resolve({ part: "nope" }),
+    });
+    expect(invalid.status).toBe(404);
+    expect(await invalid.json()).toEqual({ error: "parte_invalida" });
   });
 });

@@ -1,4 +1,4 @@
-import { YAMI_OS_FREE_ISO_FROM, YAMI_OS_NAME } from "@/lib/yamios/brand";
+import { YAMI_OS_NAME } from "@/lib/yamios/brand";
 import {
   formatByteSize,
   resolveFreeIsoDownload,
@@ -13,7 +13,7 @@ export function IsoDownloader({ source }: { source: IsoManifestSource }) {
       <div className="card iso-offer p-5" data-iso-offer="soon">
         <p className="kicker">Download da ISO</p>
         <p className="mt-3 text-lg font-semibold tracking-tight text-balance">
-          Em breve na versão {YAMI_OS_FREE_ISO_FROM}.
+          A ISO ainda não está disponível para download. A publicação oficial será anunciada aqui.
         </p>
       </div>
     );
