@@ -39,9 +39,11 @@ describe("verificação final 0.8.0", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("manifesto do site aponta para o pacote 1.0.0", () => {
+  it("anuncia a ISO 1.1.0 e mantém o pacote incremental 1.0.0", () => {
     const manifest = JSON.parse(readFileSync(join(root, "lib/yamios/latest.json"), "utf8"));
-    expect(manifest.versao).toBe("1.0.0");
+    expect(manifest.versao).toBe("1.1.0");
+    expect(manifest.pacotes[0].versao).toBe("1.0.0");
+    expect(manifest.pacotes[0].arquivo).toBe("yami-os-1.0.0-pacote.tar.zst");
     expect(manifest.pacotes[0].sha256).toMatch(/^[a-f0-9]{64}$/);
     expect(manifest.pacotes[0].deVersaoMinima).toBe("0.8.0");
   });

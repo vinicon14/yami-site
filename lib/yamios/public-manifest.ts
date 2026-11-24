@@ -5,16 +5,18 @@ import { YAMI_OS_NAME } from "@/lib/yamios/brand";
  * A URL pública é montada aqui. Um campo ausente não pode virar o
  * texto "undefined" no caminho (foi o que aconteceu na r5).
  *
- * O padrão é o pacote que existe na release v1.0.0:
+ * O pacote incremental publicado continua na release v1.0.0:
  * `yami-os-1.0.0-pacote.tar.zst`, 223924 bytes,
  * sha256 3972f0f55000a185e76922406e2261f32f8ee782252a58da7424389755e96008.
- * `build`, `notas` e `descricao` descrevem esse arquivo (r1).
+ * A `versao` do manifesto pode anunciar uma ISO mais nova. A URL do pacote
+ * usa `pacotes[].versao` (`v` + essa versão), não a versão da ISO.
+ * `pacotes[0].descricao` descreve o arquivo do pacote. As `notas` descrevem a ISO.
  *
  * Para anunciar outro pacote (a r5 de 233028 bytes nunca foi enviada,
  * e a R6 ainda está no PC), edite só `lib/yamios/latest.json`, juntos:
- * `build`, `notas`, `pacotes[0].descricao`, `pacotes[0].arquivo`,
- * `pacotes[0].sha256`, `pacotes[0].tamanho`.
- * Não escreva `url`. O tag da release é `v` + `versao`.
+ * `pacotes[0].descricao`, `pacotes[0].arquivo`, `pacotes[0].sha256`,
+ * `pacotes[0].tamanho` e `pacotes[0].versao`.
+ * Não escreva `url` no pacote. O tag da release do pacote é `v` + `pacotes[].versao`.
  * Use um nome de arquivo novo e o sha256 real do arquivo enviado.
  * Reutilizar `yami-os-1.0.0-pacote.tar.zst` com outro tamanho ou sha256
  * faz a API omitir o pacote, para não anunciar bytes que não batem.
