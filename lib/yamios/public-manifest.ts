@@ -126,7 +126,7 @@ export function releaseAssetUrl(versao: string, arquivo: string): string | null 
 }
 
 function publicReleaseIsoUrl(value: unknown, version: string): string {
-  if (typeof value !== "string" || !/^\\d+\\.\\d+\\.\\d+$/.test(version)) return "";
+  if (typeof value !== "string" || !/^[0-9]+[.][0-9]+[.][0-9]+$/.test(version)) return "";
   try {
     const parsed = new URL(value);
     const expectedPrefix = `/vinicon14/yamios-releases/releases/download/v${version}/`;
