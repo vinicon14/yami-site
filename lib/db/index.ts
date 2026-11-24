@@ -27,15 +27,15 @@ async function openStore(): Promise<Store> {
     const { getPostgresStore } = await import("./postgres");
     return getPostgresStore(url);
   }
-  // No Vercel, o sistema de arquivos é efêmero; sem DATABASE_URL
-  // usamos memória e avisamos. Páginas de marketing funcionam;
-  // pedidos não sobrevivem a um cold start — configure um Postgres
-  // antes de deixar a venda no ar de verdade.
+
+  // Vercel tem filesystem efêmero e memória por instância. Não permitir
+  // fallback silencioso: isso fazia contas sumirem após cold starts.
   if (process.env.VERCEL) {
-    const { createMemoryStore } = await import("./memory");
-    console.warn("yami_store_memory_fallback");
-    return createMemoryStore();
+    throw new Error(
+      "DATABASE_URL ausente: configure o PostgreSQL exclusivo do YAMI nas variáveis da Vercel.",
+    );
   }
+
   return getSqliteStore(getSqlitePath());
 }
 
