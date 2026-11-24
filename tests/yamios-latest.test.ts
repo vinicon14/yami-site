@@ -21,7 +21,7 @@ describe("manifesto público do YAMI OS", () => {
     const body = await res.json();
     const pacote = body.pacotes[0];
     expect(new URL(pacote.url).pathname.split("/").pop()).toBe(arquivo);
-    expect(raw.versao).toBe("1.1.0");
+    expect(raw.versao).toBe("1.0.0");
     expect(raw.pacotes[0].versao).toBe("1.0.0");
     expect(pacote.versao).toBe("1.0.0");
     expect(pacote.url).toBe(releaseAssetUrl(raw.pacotes[0].versao, arquivo));
@@ -32,16 +32,24 @@ describe("manifesto público do YAMI OS", () => {
     expect(pacote.tamanho).toBe(known.tamanho);
     expect(pacote.sha256).toBe(known.sha256);
     expect(body.build).toBe("r1");
-    expect(body.versao).toBe("1.1.0");
-    expect(body.notas).toEqual(raw.notas);
+    expect(body.versao).toBe("1.0.0");
+    expect(body.notas).toEqual([]);
     expect(body.pacotes[0].descricao).toBe(raw.pacotes[0].descricao);
     expect(body.pacotes[0].descricao).not.toMatch(/greeter|LightDM|Criar apps/i);
     expect(body.notas.join("\n")).toContain("LightDM");
     expect(body.notas.join("\n")).not.toMatch(/greeter|Criar apps/i);
-    expect(body.iso.observacao).toContain("ainda não foi publicada");
-    expect(body.iso.partes).toEqual([]);
+    expect(body.iso.observacao).toContain("ISO 1.0.0 publicada em duas partes");
+    expect(body.iso.partes).toHaveLength(2);
+    expect(body.iso.partes.map((part: { url: string }) => part.url)).toEqual([
+      "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte01",
+      "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte02",
+    ]);
+    expect(body.iso.partes.map((part: { sha256: string }) => part.sha256)).toEqual([
+      "bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8",
+      "a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544",
+    ]);
     expect(body.iso.sha256).toBe("");
-    expect(body.iso.tamanho).toBe(0);
+    expect(body.iso.tamanho).toBe(3318644736);
   });
 
   it("não publica URL com arquivo undefined nem anuncia sha divergente do asset conhecido", () => {
@@ -90,11 +98,11 @@ describe("manifesto público do YAMI OS", () => {
     );
   });
 
-  it("não expõe partes inexistentes e o endpoint legado responde sem arquivo", async () => {
+  it("expõe somente os assets oficiais e mantém o endpoint legado sem arquivo", async () => {
     const res = await latestGet();
     const body = await res.json();
-    expect(body.iso.partes).toEqual([]);
-    expect(JSON.stringify(body.iso)).not.toContain("github.com");
+    expect(body.iso.partes).toHaveLength(2);
+    expect(JSON.stringify(body.iso)).not.toContain("/api/yamios/iso");
     expect(JSON.stringify(body.iso)).not.toContain("/api/yamios/iso");
 
     const iso = await isoGet(new Request("http://localhost/api/yamios/iso/1"), {
