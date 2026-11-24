@@ -1,6 +1,5 @@
-import { renderInstallCommands } from "@/lib/install-page";
 import { YAMI_OS_FREE_ISO_FROM, YAMI_OS_ISO_SOON } from "@/lib/yamios/brand";
-import { assetFilename, releaseAssetUrl } from "@/lib/yamios/public-manifest";
+import { assetFilename, filenameFromUrl, releaseAssetUrl } from "@/lib/yamios/public-manifest";
 
 export type IsoPartSource = {
   url?: string;
@@ -122,19 +121,22 @@ function windowsJoin(names: string[]): string {
 
 function instructions(parts: FreeIsoPart[], isoSha: string): { linux: string[]; windows: string[] } {
   const names = parts.map((part) => part.fileName);
-  const linux = [
-    ...names.map((name) => `sha256sum ${name}`),
-    ...renderInstallCommands(names.length),
-  ];
-  const windows = [
-    ...names.map((name) => `certutil -hashfile ${name} SHA256`),
-    windowsJoin(names),
-    "certutil -hashfile yami-os-amd64.iso SHA256",
-  ];
-  return {
-    linux: [...linux, `# ${isoSha}`],
-    windows: [...windows, `rem ${isoSha}`],
-  };
+  const linux = names.map((name) => `sha256sum ${name}`);
+  const windows = names.map((name) => `certutil -hashfile ${name} SHA256`);
+  if (parts.length > 1) {
+    linux.push(`cat ${names.join(" ")} > yami-os-amd64.iso`);
+    linux.push("sha256sum yami-os-amd64.iso");
+    windows.push(windowsJoin(names));
+    windows.push("certutil -hashfile yami-os-amd64.iso SHA256");
+  }
+  if (isoSha) {
+    linux.push(`# SHA-256 esperado da ISO: ${isoSha}`);
+    windows.push(`rem SHA-256 esperado da ISO: ${isoSha}`);
+  } else {
+    linux.push("# O manifesto nao publica o SHA-256 da ISO montada; os SHA-256 das partes sao verificados pelo script.");
+    windows.push("rem O manifesto nao publica o SHA-256 da ISO montada; confira os SHA-256 das partes.");
+  }
+  return { linux, windows };
 }
 
 /**
@@ -149,9 +151,10 @@ export function resolveFreeIsoDownload(source: IsoManifestSource): FreeIsoReady 
   const iso = source.iso;
   const isoSha = validDigest(iso?.sha256);
   const isoSize = validSize(iso?.tamanho);
-  if (!iso || !isoSha || !isoSize) return SOON;
+  if (!iso || !isoSize) return SOON;
 
   const rawParts = iso.partes ?? [];
+  if (!isoSha && rawParts.length === 0) return SOON;
   const parts: FreeIsoPart[] = [];
   for (let index = 0; index < rawParts.length; index += 1) {
     const part = rawParts[index];
@@ -161,7 +164,7 @@ export function resolveFreeIsoDownload(source: IsoManifestSource): FreeIsoReady 
     if (!href || !sha256 || !tamanho) return SOON;
     parts.push({
       index: index + 1,
-      fileName: partFileName(index),
+      fileName: assetFilename(part.arquivo) ?? filenameFromUrl(part.url) ?? partFileName(index),
       href,
       sha256,
       tamanho,
