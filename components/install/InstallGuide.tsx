@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CopyButton } from "@/components/CopyButton";
 import { BOOT_MENU_KEYS } from "@/lib/install-guide";
-import { formatByteSize } from "@/lib/yamios/iso-downloader";
+import { formatByteSize, publicIsoHref } from "@/lib/yamios/iso-downloader";
 import { YAMI_OS_NAME } from "@/lib/yamios/brand";
 import {
   JOIN_SCRIPT_FILES,
@@ -107,7 +107,7 @@ export function InstallGuide({ source }: { source: GuideSource }) {
   const rawParts = source.iso?.partes ?? [];
   const downloads = rawParts.length
     ? rawParts.map((part, index) => ({
-        href: typeof part.url === "string" ? part.url : "",
+        href: publicIsoHref(source.versao ?? "", part) ?? "",
         fileName: plan?.parts[index]?.fileName ?? `parte${String(index + 1).padStart(2, "0")}`,
         sha256: plan?.parts[index]?.sha256 ?? part.sha256 ?? "",
         tamanho: typeof part.tamanho === "number" ? part.tamanho : 0,
@@ -115,7 +115,7 @@ export function InstallGuide({ source }: { source: GuideSource }) {
     : plan?.parts.length === 1
       ? [
           {
-            href: typeof source.iso?.url === "string" ? source.iso.url : "",
+            href: publicIsoHref(source.versao ?? "", { url: source.iso?.url ?? undefined }) ?? "",
             fileName: plan.parts[0].fileName,
             sha256: plan.isoSha256,
             tamanho: typeof source.iso?.tamanho === "number" ? source.iso.tamanho : 0,
