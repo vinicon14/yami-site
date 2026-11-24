@@ -178,11 +178,16 @@ export function toPublicManifest(raw: YamiosManifestSource): PublicYamiosManifes
   // A ISO é pública e gratuita. Preserve o link da release: o endpoint
   // /api/yamios/iso era legado, exigia licença e apontava para a versão 1.0.0.
   // Só aceitamos assets HTTPS do repositório oficial e da tag desta versão.
-  const partes = (raw.iso?.partes ?? []).map((part) => ({
-    url: publicReleaseIsoUrl(part.url, versao),
-    sha256: String(part.sha256 ?? ""),
-    tamanho: Number(part.tamanho ?? 0),
-  }));
+  const partes = (raw.iso?.partes ?? []).map((part) => {
+    const fromUrl = publicReleaseIsoUrl(part.url, versao);
+    const arquivo = assetFilename(part.arquivo);
+    const fromFile = arquivo ? releaseAssetUrl(versao, arquivo) : null;
+    return {
+      url: fromUrl || fromFile || "",
+      sha256: String(part.sha256 ?? ""),
+      tamanho: Number(part.tamanho ?? 0),
+    };
+  });
 
   return {
     produto: raw.produto ?? YAMI_OS_NAME,

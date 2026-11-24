@@ -144,7 +144,7 @@ function buildSh(version: string, parts: JoinScriptPart[], isoName: string, isoS
   for (const check of before) {
     lines.push(`conferir ${shellSingle(check.fileName)} ${shellSingle(check.sha256)}`);
   }
-  if (after.length > 0) {
+  if (parts.length > 1) {
     const names = parts.map((part) => shellSingle(part.fileName)).join(" ");
     lines.push('echo "Juntando as partes..."');
     lines.push(`if ! cat ${names} > ${shellSingle(isoName)}; then`);
@@ -192,7 +192,7 @@ function buildBat(version: string, parts: JoinScriptPart[], isoName: string, bef
     lines.push("if errorlevel 1 goto :falhou");
   }
 
-  if (after.length > 0) {
+  if (parts.length > 1) {
     lines.push(`echo Juntando as partes em ${isoName} ...`);
     lines.push(`${windowsJoin(parts.map((part) => part.fileName), isoName)} >nul`);
     lines.push("if errorlevel 1 goto :juncao");
@@ -259,7 +259,7 @@ function manualCommands(parts: JoinScriptPart[], isoName: string, isoSha: string
     windows.push(certutil(check.fileName));
     windows.push(`rem Tem que ser igual a ${check.sha256}`);
   }
-  if (after.length > 0) {
+  if (parts.length > 1) {
     windows.push(windowsJoin(parts.map((part) => part.fileName), isoName));
     for (const check of after) {
       windows.push(certutil(check.fileName));
@@ -268,7 +268,7 @@ function manualCommands(parts: JoinScriptPart[], isoName: string, isoSha: string
   }
 
   const listed = [...before, ...after];
-  const cat = after.length > 0 ? `cat ${parts.map((part) => part.fileName).join(" ")} > ${isoName}\n` : "";
+  const cat = parts.length > 1 ? `cat ${parts.map((part) => part.fileName).join(" ")} > ${isoName}\n` : "";
   return {
     windowsCommands: windows.join("\n"),
     linuxCommands: `${cat}${checksumBlock("sha256sum -c", listed)}`,
@@ -278,11 +278,11 @@ function manualCommands(parts: JoinScriptPart[], isoName: string, isoSha: string
 
 export function buildJoinScripts(source: JoinManifestSource): JoinScriptBundle | null {
   const iso = source.iso;
-  const isoSha = digest(iso?.sha256);
-  if (!iso || !isoSha) return null;
+  const isoSha = digest(iso?.sha256) ?? "";
+  const rawParts = iso?.partes ?? [];
+  if (!iso || (!isoSha && rawParts.length === 0)) return null;
 
   const version = /^\d+\.\d+\.\d+$/.test(source.versao?.trim() ?? "") ? source.versao!.trim() : "";
-  const rawParts = iso.partes ?? [];
   const parts: JoinScriptPart[] = [];
 
   if (rawParts.length === 0) {
@@ -315,11 +315,14 @@ export function buildJoinScripts(source: JoinManifestSource): JoinScriptBundle |
   const after: Check[] = [];
   if (multiple) {
     before.push(...parts.map((part) => ({ fileName: part.fileName, sha256: part.sha256 })));
-    after.push({ fileName: isoFileName, sha256: isoSha });
+    // A release may publish hashes for each split file without publishing
+    // the checksum of the concatenated ISO. In that case verify every part
+    // and join them, but never invent a checksum for the final image.
+    if (isoSha) after.push({ fileName: isoFileName, sha256: isoSha });
   } else {
     const only = parts[0];
-    if (only.sha256 !== isoSha) before.push({ fileName: only.fileName, sha256: only.sha256 });
-    before.push({ fileName: only.fileName, sha256: isoSha });
+    if (isoSha && only.sha256 !== isoSha) before.push({ fileName: only.fileName, sha256: only.sha256 });
+    before.push({ fileName: only.fileName, sha256: isoSha || only.sha256 });
   }
 
   const commands = manualCommands(parts, isoFileName, isoSha, before, after);

@@ -59,7 +59,6 @@ describe("scripts de juntar a ISO", () => {
     expect(bundle.sh).toContain("c".repeat(64));
     expect(bundle.bat).toContain("a".repeat(64));
     expect(bundle.bat).toContain("c".repeat(64));
-    expect(bundle.sh).not.toContain(raw.iso.sha256);
     expect(bundle.bat).not.toContain(raw.versao);
     expect(bundle.bat).not.toContain("1.0.0");
     expect(bundle.sh).toContain("cat ");
@@ -153,10 +152,22 @@ describe("scripts de juntar a ISO", () => {
     expect(fallback?.sh).not.toContain("https://");
   });
 
-  it("não gera scripts de montagem quando a ISO ainda não foi publicada", () => {
-    expect(raw.versao).toBe("1.1.0");
-    expect(raw.iso.partes).toEqual([]);
-    expect(buildJoinScripts(raw)).toBeNull();
+  it("gera scripts para a ISO 1.0.0 com os nomes e hashes publicados", () => {
+    expect(raw.versao).toBe("1.0.0");
+    expect(raw.iso.partes).toHaveLength(2);
+    const bundle = buildJoinScripts(raw);
+    expect(bundle).not.toBeNull();
+    if (!bundle) return;
+    expect(bundle.parts.map((part) => part.fileName)).toEqual([
+      "yami-os-1.0.0.iso.parte01",
+      "yami-os-1.0.0.iso.parte02",
+    ]);
+    expect(bundle.isoSha256).toBe("");
+    expect(bundle.sh).toContain("bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8");
+    expect(bundle.sh).toContain("a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544");
+    expect(bundle.sh).toContain("cat ");
+    expect(bundle.bat).toContain("copy /Y /b");
+    expect(bundle.sh).not.toContain("SHA-256 da ISO montada");
   });
 
   it("o .bat começa com @echo off, usa CRLF e só tem bytes ASCII", () => {
@@ -201,6 +212,39 @@ describe("scripts de juntar a ISO", () => {
         },
       }),
     ).toBeNull();
+  });
+
+  it("junta duas partes mesmo sem SHA-256 publicado para a ISO completa", async () => {
+    const left = Buffer.from("parte-um-1.0.0");
+    const right = Buffer.from("parte-dois-1.0.0");
+    const bundle = buildJoinScripts({
+      versao: "1.0.0",
+      iso: {
+        sha256: "",
+        tamanho: left.length + right.length,
+        partes: [
+          { arquivo: "parte-a", sha256: sha(left), tamanho: left.length },
+          { arquivo: "parte-b", sha256: sha(right), tamanho: right.length },
+        ],
+      },
+    });
+    expect(bundle).not.toBeNull();
+    if (!bundle) return;
+    expect(bundle.isoSha256).toBe("");
+    expect(bundle.sh).toContain("cat 'parte-a' 'parte-b'");
+    expect(bundle.sh).not.toContain("conferir 'yami-os-1.0.0-amd64.iso'");
+    const dir = await mkdtemp(path.join(tmpdir(), "yami-join-no-iso-sha-"));
+    try {
+      await writeFile(path.join(dir, "parte-a"), left);
+      await writeFile(path.join(dir, "parte-b"), right);
+      await writeFile(path.join(dir, "juntar-iso.sh"), bundle.sh, { mode: 0o755 });
+      const script = await run("sh", ["juntar-iso.sh"], dir);
+      expect(script.code).toBe(0);
+      expect(script.output).toContain("Bateu");
+      expect(sha(await readFile(path.join(dir, bundle.isoFileName)))).toBe(sha(Buffer.concat([left, right])));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("o script de duas partes junta, confere e diz se bateu", async () => {
@@ -304,17 +348,18 @@ describe("scripts de juntar a ISO", () => {
     }
   });
 
-  it("não entrega scripts de montagem enquanto não houver ISO publicada", async () => {
+  it("entrega os scripts de montagem para a ISO publicada", async () => {
     const unix = await scriptGet(new Request("http://localhost/api/yamios/scripts/unix"), {
       params: Promise.resolve({ kind: "unix" }),
     });
-    expect(unix.status).toBe(404);
-    expect(await unix.json()).toEqual({ error: "iso_indisponivel" });
+    expect(unix.status).toBe(200);
+    expect(await unix.text()).toContain("cat ");
 
     const windows = await scriptGet(new Request("http://localhost/api/yamios/scripts/windows"), {
       params: Promise.resolve({ kind: "windows" }),
     });
-    expect(windows.status).toBe(404);
+    expect(windows.status).toBe(200);
+    expect(await windows.text()).toContain("copy /Y /b");
 
     const missing = await scriptGet(new Request("http://localhost/api/yamios/scripts/outro"), {
       params: Promise.resolve({ kind: "outro" }),
@@ -327,8 +372,9 @@ describe("scripts de juntar a ISO", () => {
 describe("página de instalação", () => {
   it("mostra o estado real da ISO e mantém as instruções de pendrive e boot", () => {
     const html = renderToStaticMarkup(<InstalarYamiOsPage />);
-    expect(html).toContain("A ISO desta versão ainda não está publicada");
-    expect(html).toContain("1.1.0");
+    expect(html).toContain("Baixar a parte 1");
+    expect(html).toContain("1.0.0");
+    expect(html).toContain("yami-os-1.0.0.iso.parte01");
     expect(html).toContain("Rufus");
     expect(html).toContain("balenaEtcher");
     expect(html).toContain("Ventoy");
@@ -337,8 +383,8 @@ describe("página de instalação", () => {
     expect(html).toContain("America/Sao_Paulo");
     expect(html).toContain("pt-BR");
     expect(html).toContain("Dá para pular");
-    expect(html).not.toContain('data-iso-offer="ready"');
-    expect(html).not.toContain("de graça para baixar");
+    expect(html).toContain('data-iso-offer="ready"');
+    expect(html).toContain("O YAMI OS é de graça para baixar");
     expect(html).not.toContain("gratis para baixar");
     expect(html).not.toContain("/api/yamios/iso");
     expect(html).not.toMatch(/senha padr[aã]o/i);
