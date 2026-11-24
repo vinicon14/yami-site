@@ -2,6 +2,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getStore } from "@/lib/db";
 import { toPublicFeatureRequest } from "@/lib/feature-requests";
 import { AccountPanel } from "@/components/AccountPanel";
+import { AccountLocalPersistence } from "@/components/AccountLocalPersistence";
 import { FeatureRequestsPanel } from "@/components/FeatureRequestsPanel";
 import { MeusAppsPanel } from "@/components/MeusAppsPanel";
 import { cookies } from "next/headers";
@@ -34,6 +35,11 @@ export default async function ContaPage() {
         Olá{current.user.name ? `, ${current.user.name}` : ""}
       </h1>
       <p className="mt-2 text-sm text-muted">{current.user.email}</p>
+      <AccountLocalPersistence
+        userId={current.user.id}
+        email={current.user.email}
+        name={current.user.name}
+      />
       <AccountPanel
         licenses={licenses.map((l) => ({
           id: l.id,
