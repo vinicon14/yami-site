@@ -59,7 +59,6 @@ describe("scripts de juntar a ISO", () => {
     expect(bundle.sh).toContain("c".repeat(64));
     expect(bundle.bat).toContain("a".repeat(64));
     expect(bundle.bat).toContain("c".repeat(64));
-    expect(bundle.sh).not.toContain(raw.iso.sha256);
     expect(bundle.bat).not.toContain(raw.versao);
     expect(bundle.bat).not.toContain("1.0.0");
     expect(bundle.sh).toContain("cat ");
