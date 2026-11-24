@@ -1,15 +1,15 @@
 {
   "produto": "YAMI OS",
   "canal": "estavel",
-  "versao": "1.0.0",
+  "versao": "1.1.0",
   "build": "r1",
-  "data": "2026-11-22",
+  "data": "2026-11-23",
   "notas": [
-    "YAMI OS 1.0.0: tela de login e contas de usuario separadas",
-    "Loja de aplicativos com instalacao segura e verificacao SHA-256",
-    "Publicacao de aplicativos pelo site com aprovacao administrativa",
-    "Pagina de instalacao com verificacao de partes da ISO",
-    "Atualizacao incremental preserva dados, Wi-Fi e aplicativos"
+    "Conta de usuario criada no primeiro boot, sem senha fixa",
+    "Sem sudo NOPASSWD e live sem sudo",
+    "Tela de login LightDM corrigida",
+    "Atalhos Alt+F4/Alt+F9 desativados",
+    "Instalador enxerga os discos (sfdisk incluido)"
   ],
   "pacotes": [
     {
@@ -23,22 +23,22 @@
   ],
   "iso": {
     "url": null,
-    "sha256": "2604c72b828fbf4635c794513dfa5d8b86cdfe8fa2336cceb198614ecdad6c5a",
+    "sha256": "71457f1d3a3a009854827869abf97b48c93b08b5c254e6582e369c297097c342",
     "tamanho": 3318644736,
     "kernel": "6.8.0-149-generic",
     "partes": [
       {
-        "url": "/api/yamios/iso/1",
-        "sha256": "bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8",
+        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v1.1.0/yami-os-1.1.0.iso.parte01",
+        "sha256": "0aebf7133b646b6a23c3010d869f3d3269c40759ed428dfaa4e0d0c734609ec3",
         "tamanho": 1992294400
       },
       {
-        "url": "/api/yamios/iso/2",
-        "sha256": "a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544",
+        "url": "https://github.com/vinicon14/yamios-releases/releases/download/v1.1.0/yami-os-1.1.0.iso.parte02",
+        "sha256": "2c6342a006b4cd9665bced5426af95945ca03fb05503f0b2be7cfb7b08e5b847",
         "tamanho": 1326350336
       }
     ],
-    "observacao": "ISO 1.0.0 completa, em duas partes. Disponível para usuários com licença ativa. O pacote incremental publicado é o 1.0.0 r1."
+    "observacao": "ISO 1.1.0 completa em duas partes, gratis para baixar."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",

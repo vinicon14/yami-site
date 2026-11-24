@@ -21,17 +21,24 @@ describe("manifesto público do YAMI OS", () => {
     const body = await res.json();
     const pacote = body.pacotes[0];
     expect(new URL(pacote.url).pathname.split("/").pop()).toBe(arquivo);
-    expect(pacote.url).toBe(releaseAssetUrl(raw.versao, arquivo));
+    expect(raw.versao).toBe("1.1.0");
+    expect(raw.pacotes[0].versao).toBe("1.0.0");
+    expect(pacote.versao).toBe("1.0.0");
+    expect(pacote.url).toBe(releaseAssetUrl(raw.pacotes[0].versao, arquivo));
+    expect(pacote.url).not.toBe(releaseAssetUrl(raw.versao, arquivo));
     expect(pacote.url).not.toContain("/undefined");
 
     const known = KNOWN_PUBLISHED_PACKAGES[arquivo];
     expect(pacote.tamanho).toBe(known.tamanho);
     expect(pacote.sha256).toBe(known.sha256);
     expect(body.build).toBe("r1");
+    expect(body.versao).toBe("1.1.0");
     expect(body.notas).toEqual(raw.notas);
     expect(body.pacotes[0].descricao).toBe(raw.pacotes[0].descricao);
-    const texto = [...body.notas, body.pacotes[0].descricao].join("\n");
-    expect(texto).not.toMatch(/greeter|LightDM|Criar apps/i);
+    expect(body.pacotes[0].descricao).not.toMatch(/greeter|LightDM|Criar apps/i);
+    expect(body.notas.join("\n")).toContain("LightDM");
+    expect(body.notas.join("\n")).not.toMatch(/greeter|Criar apps/i);
+    expect(body.iso.observacao).toBe("ISO 1.1.0 completa em duas partes, gratis para baixar.");
   });
 
   it("não publica URL com arquivo undefined nem anuncia sha divergente do asset conhecido", () => {
