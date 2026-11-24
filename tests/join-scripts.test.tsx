@@ -153,36 +153,10 @@ describe("scripts de juntar a ISO", () => {
     expect(fallback?.sh).not.toContain("https://");
   });
 
-  it("lê a ISO publicada: duas partes e os sha256 do latest.json", () => {
-    const bundle = buildJoinScripts(raw);
-    expect(bundle).not.toBeNull();
-    if (!bundle) return;
-    expect(bundle.version).toBe(raw.versao);
-    expect(bundle.parts).toHaveLength(raw.iso.partes.length);
-    expect(bundle.isoSha256).toBe(raw.iso.sha256);
-    expect(bundle.isoFileName).toBe(`yami-os-${raw.versao}-amd64.iso`);
-    expect(bundle.sh).toContain(raw.iso.sha256);
-    expect(bundle.bat).toContain(raw.iso.sha256);
-    expect(bundle.linuxCommands).toContain(raw.iso.sha256);
-    expect(bundle.windowsCommands).toContain(raw.iso.sha256);
-    for (const part of raw.iso.partes) {
-      expect(bundle.sh).toContain(part.sha256);
-      expect(bundle.bat).toContain(part.sha256);
-      expect(bundle.linuxCommands).toContain(part.sha256);
-    }
-    expect(bundle.version).toBe("1.1.0");
-    expect(bundle.parts.map((part) => part.fileName)).toEqual([
-      "yami-os-1.1.0.iso.parte01",
-      "yami-os-1.1.0.iso.parte02",
-    ]);
-    expect(bundle.parts.map((part) => part.fileName)).toEqual(
-      raw.iso.partes.map((part) => new URL(part.url).pathname.split("/").pop()),
-    );
-    expect(bundle.bat).toContain(
-      'copy /Y /b "yami-os-1.1.0.iso.parte01"+"yami-os-1.1.0.iso.parte02"',
-    );
-    expect(bundle.sh).not.toContain("/api/yamios/iso");
-    expect(bundle.bat).not.toContain("/api/yamios/iso");
+  it("não gera scripts de montagem quando a ISO ainda não foi publicada", () => {
+    expect(raw.versao).toBe("1.1.0");
+    expect(raw.iso.partes).toEqual([]);
+    expect(buildJoinScripts(raw)).toBeNull();
   });
 
   it("o .bat começa com @echo off, usa CRLF e só tem bytes ASCII", () => {
@@ -330,64 +304,31 @@ describe("scripts de juntar a ISO", () => {
     }
   });
 
-  it("entrega o script da versão publicada para baixar", async () => {
+  it("não entrega scripts de montagem enquanto não houver ISO publicada", async () => {
     const unix = await scriptGet(new Request("http://localhost/api/yamios/scripts/unix"), {
       params: Promise.resolve({ kind: "unix" }),
     });
-    expect(unix.status).toBe(200);
-    expect(unix.headers.get("content-disposition")).toContain("juntar-iso.sh");
-    const sh = await unix.text();
-    expect(sh).toContain(raw.iso.sha256);
-    expect(sh).toContain("yami-os-1.1.0.iso.parte01");
-    expect(sh).toContain("yami-os-1.1.0.iso.parte02");
-    expect(sh).toContain("sha256sum -c");
-    expect(sh).not.toContain("/api/yamios/iso");
+    expect(unix.status).toBe(404);
+    expect(await unix.json()).toEqual({ error: "iso_indisponivel" });
 
     const windows = await scriptGet(new Request("http://localhost/api/yamios/scripts/windows"), {
       params: Promise.resolve({ kind: "windows" }),
     });
-    expect(windows.status).toBe(200);
-    const disposition = windows.headers.get("content-disposition") ?? "";
-    const type = windows.headers.get("content-type") ?? "";
-    expect(disposition).toContain('filename="juntar-iso.bat"');
-    expect(disposition.toLowerCase()).not.toContain(".txt");
-    expect(type).toBe("application/octet-stream");
-    expect(type.toLowerCase()).not.toContain("text/plain");
-    const bat = await windows.text();
-    expect(bat.startsWith("@echo off")).toBe(true);
-    expect(bat).toContain("certutil -hashfile");
-    expect(bat).toContain("yami-os-1.1.0.iso.parte01");
-    expect(bat).toContain(raw.iso.sha256);
-    expect(bat).not.toContain("/api/yamios/iso");
-    expect([...bat].every((char) => char.charCodeAt(0) < 128)).toBe(true);
+    expect(windows.status).toBe(404);
 
     const missing = await scriptGet(new Request("http://localhost/api/yamios/scripts/outro"), {
       params: Promise.resolve({ kind: "outro" }),
     });
     expect(missing.status).toBe(404);
   });
+
 });
 
 describe("página de instalação", () => {
-  it("mostra a ISO atual, os scripts, o pendrive, o boot e o primeiro uso", () => {
+  it("mostra o estado real da ISO e mantém as instruções de pendrive e boot", () => {
     const html = renderToStaticMarkup(<InstalarYamiOsPage />);
-    expect(html).toContain(raw.iso.sha256);
-    for (const part of raw.iso.partes) expect(html).toContain(part.sha256);
-    expect(html).toContain("Copiar");
-    expect(html).toContain("/api/yamios/scripts/windows");
-    expect(html).toContain("/api/yamios/scripts/unix");
-    expect(html).toContain("copy /Y /b");
-    expect(html).toContain("certutil -hashfile");
-    expect(html).toContain("sha256sum -c");
-    expect(html).toContain("shasum -a 256");
+    expect(html).toContain("A ISO desta versão ainda não está publicada");
     expect(html).toContain("1.1.0");
-    expect(html).toContain("yami-os-1.1.0.iso.parte01");
-    expect(html).toContain("yami-os-1.1.0.iso.parte02");
-    for (const part of raw.iso.partes) expect(html).toContain(part.url);
-    expect(html).toContain('data-iso-offer="ready"');
-    expect(html).not.toContain('data-iso-offer="soon"');
-    expect(html).not.toContain("Em breve na versão");
-    expect(html).not.toContain("/api/yamios/iso");
     expect(html).toContain("Rufus");
     expect(html).toContain("balenaEtcher");
     expect(html).toContain("Ventoy");
@@ -396,10 +337,10 @@ describe("página de instalação", () => {
     expect(html).toContain("America/Sao_Paulo");
     expect(html).toContain("pt-BR");
     expect(html).toContain("Dá para pular");
-    expect(html).not.toContain("pede uma licença");
-    expect(html).toContain("de graça para baixar");
-    expect(html).toContain("gratis para baixar");
-    expect(html).toContain("pagar para usar a YAMI no Windows");
+    expect(html).not.toContain('data-iso-offer="ready"');
+    expect(html).not.toContain("de graça para baixar");
+    expect(html).not.toContain("gratis para baixar");
+    expect(html).not.toContain("/api/yamios/iso");
     expect(html).not.toMatch(/senha padr[aã]o/i);
     expect(html).not.toMatch(/default password/i);
     for (const row of BOOT_MENU_KEYS) {
