@@ -40,7 +40,7 @@ function readyManifest(overrides: IsoManifestSource = {}): IsoManifestSource {
 }
 
 const beforeFree: IsoManifestSource = {
-  versao: "1.0.0",
+  versao: "0.9.0",
   iso: {
     sha256: ISO_SHA,
     tamanho: 3318644736,
@@ -54,14 +54,14 @@ const beforeFree: IsoManifestSource = {
 describe("baixador gratuito da ISO", () => {
   it("mantém o nome oficial numa constante", () => {
     expect(YAMI_OS_NAME).toBe("YAMI OS");
-    expect(YAMI_OS_FREE_ISO_FROM).toBe("1.1.0");
+    expect(YAMI_OS_FREE_ISO_FROM).toBe("1.0.0");
     expect(raw.produto).toBe(YAMI_OS_NAME);
     expect(yamiOsPromoCopy(false).windowsOffer).toContain("pagar para usar a YAMI no Windows");
     expect(yamiOsPromoCopy(true).windowsOffer).toContain("pagar para usar a YAMI no Windows");
   });
 
-  it("não promete download grátis enquanto a versão for menor que 1.1.0", () => {
-    expect(isVersionAtLeast(beforeFree.versao, "1.1.0")).toBe(false);
+  it("não promete download grátis para versões anteriores à 1.0.0", () => {
+    expect(isVersionAtLeast(beforeFree.versao, "1.0.0")).toBe(false);
     expect(yamiOsPromoCopy(false).title).toBe("O download gratuito do YAMI OS estará disponível em breve");
     expect(yamiOsPromoCopy(false).title).not.toContain("de graça para baixar");
 
@@ -76,7 +76,7 @@ describe("baixador gratuito da ISO", () => {
     expect(soon).not.toMatch(/<a[\s>]/);
   });
 
-  it("diz que é de graça para baixar a partir da 1.1.0", () => {
+  it("diz que é de graça para baixar a partir da 1.0.0", () => {
     const source = readyManifest();
     expect(yamiOsPromoCopy(true).title).toBe("O YAMI OS é de graça para baixar");
 
@@ -88,7 +88,7 @@ describe("baixador gratuito da ISO", () => {
     expect(html).toContain('data-iso-offer="ready"');
   });
 
-  it("fica desativado na 1.0.0, sem link", () => {
+  it("fica desativado em versões anteriores à 1.0.0, sem link", () => {
     const offer = resolveFreeIsoDownload(beforeFree);
     expect(offer.active).toBe(false);
     if (offer.active) return;
@@ -102,25 +102,35 @@ describe("baixador gratuito da ISO", () => {
     expect(html).toContain('data-iso-offer="soon"');
   });
 
-  it("não anuncia a ISO 1.1.0 enquanto a Release oficial não existe", () => {
-    expect(raw.versao).toBe("1.1.0");
-    expect(raw.iso.partes).toEqual([]);
+  it("ativa os arquivos reais da ISO 1.0.0 publicados na Release oficial", () => {
+    expect(raw.versao).toBe("1.0.0");
+    expect(raw.iso.partes).toHaveLength(2);
     expect(raw.iso.sha256).toBe("");
-    expect(raw.iso.tamanho).toBe(0);
+    expect(raw.iso.tamanho).toBe(3318644736);
 
     const offer = resolveFreeIsoDownload(raw);
-    expect(offer.active).toBe(false);
+    expect(offer.active).toBe(true);
+    if (!offer.active) return;
+    expect(offer.version).toBe("1.0.0");
+    expect(offer.parts.map((part) => part.href)).toEqual([
+      "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte01",
+      "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte02",
+    ]);
+    expect(offer.parts.map((part) => part.sha256)).toEqual([PART_A, PART_B].map((_, i) => raw.iso.partes[i].sha256));
 
     const promo = renderToStaticMarkup(<YamiOsPromo source={raw} />);
-    expect(promo).toContain("O download gratuito do YAMI OS estará disponível em breve");
-    expect(promo).toContain('data-iso-offer="soon"');
-    expect(promo).not.toContain("Download gratuito");
-    expect(promo).not.toContain("de graça para baixar");
+    expect(promo).toContain("O YAMI OS é de graça para baixar");
+    expect(promo).toContain('data-iso-offer="ready"');
+    expect(promo).toContain("yami-os-1.0.0.iso.parte01");
+    expect(promo).toContain("yami-os-1.0.0.iso.parte02");
     expect(promo).not.toContain("/api/yamios/iso");
 
     const page = renderToStaticMarkup(<IsoDownloader source={raw} />);
-    expect(page).toContain("A ISO ainda não está disponível para download.");
-    expect(page).not.toContain("href=");
+    expect(page).toContain("Download gratuito");
+    expect(page).toContain("yami-os-1.0.0.iso.parte01");
+    expect(page).toContain("yami-os-1.0.0.iso.parte02");
+    expect(page).toContain("O SHA-256 da ISO montada não foi informado.");
+    expect(page).not.toContain("SHA-256 da ISO: </p>");
   });
 
   it("não libera a 1.1.0 se a ISO ainda aponta para o caminho com licença", () => {
@@ -185,11 +195,11 @@ describe("baixador gratuito da ISO", () => {
     expect(offer.parts[0].href).toBe(releaseAssetUrl("1.2.0", arquivo));
     expect(resolveFreeIsoDownload(readyManifest({ versao: "2.0.0" })).active).toBe(true);
     expect(resolveFreeIsoDownload(readyManifest({ versao: "1.10.0" })).active).toBe(true);
-    expect(isVersionAtLeast("1.1.0", "1.1.0")).toBe(true);
+    expect(isVersionAtLeast("1.0.0", "1.0.0")).toBe(true);
   });
 
   it("permanece em breve sem versão suficiente ou sem ISO utilizável", () => {
-    expect(resolveFreeIsoDownload(readyManifest({ versao: "1.0.9" })).active).toBe(false);
+    expect(resolveFreeIsoDownload(readyManifest({ versao: "0.9.9" })).active).toBe(false);
     expect(resolveFreeIsoDownload(readyManifest({ versao: "1.1" })).active).toBe(false);
     expect(resolveFreeIsoDownload({ versao: "1.1.0" }).active).toBe(false);
     expect(
