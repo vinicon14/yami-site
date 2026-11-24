@@ -36,7 +36,6 @@ describe("manifesto público do YAMI OS", () => {
     expect(body.notas).toEqual([]);
     expect(body.pacotes[0].descricao).toBe(raw.pacotes[0].descricao);
     expect(body.pacotes[0].descricao).not.toMatch(/greeter|LightDM|Criar apps/i);
-    expect(body.notas.join("\n")).toContain("LightDM");
     expect(body.notas.join("\n")).not.toMatch(/greeter|Criar apps/i);
     expect(body.iso.observacao).toContain("ISO 1.0.0 publicada em duas partes");
     expect(body.iso.partes).toHaveLength(2);
