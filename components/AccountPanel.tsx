@@ -97,14 +97,14 @@ export function AccountPanel({
     event.preventDefault();
     setMsg(null);
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      if (accountPassword) {
-        setMsg("A senha só pode ser alterada quando houver conexão. O nome será sincronizado quando a internet voltar.");
-      }
+      const passwordWasEntered = Boolean(accountPassword);
       window.dispatchEvent(new CustomEvent("yami:queue-account-name", {
         detail: { name: accountName },
       }));
       setAccountPassword("");
-      setMsg("Nome salvo neste dispositivo. Será sincronizado automaticamente quando a internet voltar.");
+      setMsg(passwordWasEntered
+        ? "Nome salvo neste dispositivo e será sincronizado quando a internet voltar. A senha não foi alterada; tente novamente quando estiver online."
+        : "Nome salvo neste dispositivo. Será sincronizado automaticamente quando a internet voltar.");
       return;
     }
     const res = await fetch("/api/conta", {
