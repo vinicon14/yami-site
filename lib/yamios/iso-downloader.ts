@@ -149,7 +149,7 @@ export function resolveFreeIsoDownload(source: IsoManifestSource): FreeIsoReady 
   if (!isVersionAtLeast(version, YAMI_OS_FREE_ISO_FROM)) return SOON;
 
   const iso = source.iso;
-  const isoSha = validDigest(iso?.sha256);
+  const isoSha = validDigest(iso?.sha256) ?? "";
   const isoSize = validSize(iso?.tamanho);
   if (!iso || !isoSize) return SOON;
 
