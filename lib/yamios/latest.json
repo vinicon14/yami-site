@@ -1,16 +1,10 @@
 {
   "produto": "YAMI OS",
   "canal": "estavel",
-  "versao": "1.1.0",
+  "versao": "1.0.0",
   "build": "r1",
   "data": "2026-11-23",
-  "notas": [
-    "Conta de usuario criada no primeiro boot, sem senha fixa",
-    "Sem sudo NOPASSWD e live sem sudo",
-    "Tela de login LightDM corrigida",
-    "Atalhos Alt+F4/Alt+F9 desativados",
-    "Instalador enxerga os discos (sfdisk incluido)"
-  ],
+  "notas": [],
   "pacotes": [
     {
       "versao": "1.0.0",
@@ -24,10 +18,20 @@
   "iso": {
     "url": null,
     "sha256": "",
-    "tamanho": 0,
-    "kernel": "6.8.0-149-generic",
-    "partes": [],
-    "observacao": "A ISO 1.1.0 ainda não foi publicada na distribuição oficial. O download será liberado após a publicação e verificação dos arquivos."
+    "tamanho": 3318644736,
+    "partes": [
+      {
+        "arquivo": "yami-os-1.0.0.iso.parte01",
+        "sha256": "bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8",
+        "tamanho": 1992294400
+      },
+      {
+        "arquivo": "yami-os-1.0.0.iso.parte02",
+        "sha256": "a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544",
+        "tamanho": 1326350336
+      }
+    ],
+    "observacao": "ISO 1.0.0 publicada em duas partes na release oficial. Confira o SHA-256 de cada parte; o script do site junta os arquivos e valida as partes antes de gravar o pendrive."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",
