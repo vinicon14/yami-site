@@ -160,11 +160,11 @@ describe("baixador gratuito da ISO", () => {
       "https://github.com/vinicon14/yamios-releases/releases/download/v1.1.0/yami-os-1.1.0.iso.parte01",
       "https://github.com/vinicon14/yamios-releases/releases/download/v1.1.0/yami-os-1.1.0.iso.parte02",
     ]);
-    expect(offer.linux.join("\n")).toContain("sha256sum parte01");
-    expect(offer.linux.join("\n")).toContain("cat parte01 parte02 > yami-os-amd64.iso");
+    expect(offer.linux.join("\n")).toContain("sha256sum yami-os-1.1.0.iso.parte01");
+    expect(offer.linux.join("\n")).toContain("cat yami-os-1.1.0.iso.parte01 yami-os-1.1.0.iso.parte02 > yami-os-amd64.iso");
     expect(offer.linux.join("\n")).toContain("sha256sum yami-os-amd64.iso");
-    expect(offer.windows.join("\n")).toContain("certutil -hashfile parte01 SHA256");
-    expect(offer.windows.join("\n")).toContain("copy /b parte01+parte02 yami-os-amd64.iso");
+    expect(offer.windows.join("\n")).toContain("certutil -hashfile yami-os-1.1.0.iso.parte01 SHA256");
+    expect(offer.windows.join("\n")).toContain("copy /b yami-os-1.1.0.iso.parte01+yami-os-1.1.0.iso.parte02 yami-os-amd64.iso");
     expect(offer.windows.join("\n")).toContain("certutil -hashfile yami-os-amd64.iso SHA256");
 
     const html = renderToStaticMarkup(<IsoDownloader source={source} />);
@@ -176,7 +176,7 @@ describe("baixador gratuito da ISO", () => {
     expect(html).toContain("Windows");
     expect(html).not.toContain("/api/yamios/iso");
     expect(html).toContain("Baixar a parte 1");
-    expect(html).toContain("Salve como parte02.");
+    expect(html).toContain("Salve como yami-os-1.1.0.iso.parte02.");
   });
 
   it("aceita arquivo da release e versões acima de 1.1.0", () => {
