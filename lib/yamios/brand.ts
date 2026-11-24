@@ -5,7 +5,7 @@
 export const YAMI_OS_NAME = "YAMI OS";
 
 /** Primeira versão em que a ISO pode ser baixada de graça, sem licença. */
-export const YAMI_OS_FREE_ISO_FROM = "1.1.0";
+export const YAMI_OS_FREE_ISO_FROM = "1.0.0";
 
 export const YAMI_OS_ISO_SOON = `em breve na versão ${YAMI_OS_FREE_ISO_FROM}`;
 
