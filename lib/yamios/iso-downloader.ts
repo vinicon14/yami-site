@@ -140,7 +140,7 @@ function instructions(parts: FreeIsoPart[], isoSha: string): { linux: string[]; 
 }
 
 /**
- * O baixador gratuito só abre quando o manifesto anuncia versão >= 1.1.0
+ * O baixador gratuito só abre quando o manifesto anuncia versão >= 1.0.0
  * e a ISO tem SHA-256, tamanho e partes com URL https pública ou `arquivo`
  * na release. `/api/yamios/iso/N` continua de fora: esse caminho pede licença.
  */
