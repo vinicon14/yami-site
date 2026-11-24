@@ -215,6 +215,39 @@ describe("scripts de juntar a ISO", () => {
     ).toBeNull();
   });
 
+  it("junta duas partes mesmo sem SHA-256 publicado para a ISO completa", async () => {
+    const left = Buffer.from("parte-um-1.0.0");
+    const right = Buffer.from("parte-dois-1.0.0");
+    const bundle = buildJoinScripts({
+      versao: "1.0.0",
+      iso: {
+        sha256: "",
+        tamanho: left.length + right.length,
+        partes: [
+          { arquivo: "parte-a", sha256: sha(left), tamanho: left.length },
+          { arquivo: "parte-b", sha256: sha(right), tamanho: right.length },
+        ],
+      },
+    });
+    expect(bundle).not.toBeNull();
+    if (!bundle) return;
+    expect(bundle.isoSha256).toBe("");
+    expect(bundle.sh).toContain("cat 'parte-a' 'parte-b'");
+    expect(bundle.sh).not.toContain("conferir 'yami-os-1.0.0-amd64.iso'");
+    const dir = await mkdtemp(path.join(tmpdir(), "yami-join-no-iso-sha-"));
+    try {
+      await writeFile(path.join(dir, "parte-a"), left);
+      await writeFile(path.join(dir, "parte-b"), right);
+      await writeFile(path.join(dir, "juntar-iso.sh"), bundle.sh, { mode: 0o755 });
+      const script = await run("sh", ["juntar-iso.sh"], dir);
+      expect(script.code).toBe(0);
+      expect(script.output).toContain("Bateu");
+      expect(sha(await readFile(path.join(dir, bundle.isoFileName)))).toBe(sha(Buffer.concat([left, right])));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it("o script de duas partes junta, confere e diz se bateu", async () => {
     const left = Buffer.from("parte-esquerda");
     const right = Buffer.from("parte-direita");
