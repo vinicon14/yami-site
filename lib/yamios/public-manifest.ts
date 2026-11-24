@@ -125,6 +125,26 @@ export function releaseAssetUrl(versao: string, arquivo: string): string | null 
   return `${RELEASE_BASE}/v${versao}/${name}`;
 }
 
+function publicReleaseIsoUrl(value: unknown, version: string): string {
+  if (typeof value !== "string" || !/^\\d+\\.\\d+\\.\\d+$/.test(version)) return "";
+  try {
+    const parsed = new URL(value);
+    const expectedPrefix = `/vinicon14/yamios-releases/releases/download/v${version}/`;
+    const asset = parsed.pathname.slice(expectedPrefix.length);
+    if (
+      parsed.protocol !== "https:" ||
+      parsed.hostname !== "github.com" ||
+      !parsed.pathname.startsWith(expectedPrefix) ||
+      !asset ||
+      asset.includes("/") ||
+      !assetFilename(asset)
+    ) return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
 function publishedPackageMatches(arquivo: string, sha256: string, tamanho: number): boolean {
   const known = KNOWN_PUBLISHED_PACKAGES[arquivo];
   if (!known) return true;
@@ -155,8 +175,11 @@ export function toPublicManifest(raw: YamiosManifestSource): PublicYamiosManifes
 
   const isoUrl = raw.iso?.url;
   const publicIsoUrl = typeof isoUrl === "string" && /^https?:\/\//i.test(isoUrl) ? null : isoUrl ?? null;
-  const partes = (raw.iso?.partes ?? []).map((part, index) => ({
-    url: `/api/yamios/iso/${index + 1}`,
+  // A ISO é pública e gratuita. Preserve o link da release: o endpoint
+  // /api/yamios/iso era legado, exigia licença e apontava para a versão 1.0.0.
+  // Só aceitamos assets HTTPS do repositório oficial e da tag desta versão.
+  const partes = (raw.iso?.partes ?? []).map((part) => ({
+    url: publicReleaseIsoUrl(part.url, versao),
     sha256: String(part.sha256 ?? ""),
     tamanho: Number(part.tamanho ?? 0),
   }));
