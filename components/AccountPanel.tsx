@@ -96,6 +96,17 @@ export function AccountPanel({
   async function saveAccount(event: React.FormEvent) {
     event.preventDefault();
     setMsg(null);
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const passwordWasEntered = Boolean(accountPassword);
+      window.dispatchEvent(new CustomEvent("yami:queue-account-name", {
+        detail: { name: accountName },
+      }));
+      setAccountPassword("");
+      setMsg(passwordWasEntered
+        ? "Nome salvo neste dispositivo e será sincronizado quando a internet voltar. A senha não foi alterada; tente novamente quando estiver online."
+        : "Nome salvo neste dispositivo. Será sincronizado automaticamente quando a internet voltar.");
+      return;
+    }
     const res = await fetch("/api/conta", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
