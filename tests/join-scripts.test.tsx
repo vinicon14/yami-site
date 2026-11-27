@@ -153,7 +153,7 @@ describe("scripts de juntar a ISO", () => {
   });
 
   it("gera scripts para a ISO 2.0.0 com os nomes e hashes publicados", () => {
-    expect(raw.versao).toBe("2.0.0");
+    expect(raw.versao).toBe("2.0.1");
     expect(raw.iso.partes).toHaveLength(2);
     const bundle = buildJoinScripts(raw);
     expect(bundle).not.toBeNull();

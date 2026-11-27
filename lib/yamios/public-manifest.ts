@@ -31,6 +31,11 @@ export const KNOWN_PUBLISHED_PACKAGES: Record<string, { tamanho: number; sha256:
     tamanho: 223924,
     sha256: "3972f0f55000a185e76922406e2261f32f8ee782252a58da7424389755e96008",
   },
+  /** Release v2.0.1 (r8, 2026-11-27): instalar sem senha, Arquivos, initrd do HD. */
+  "yami-os-2.0.1-pacote.tar.zst": {
+    tamanho: 42666889,
+    sha256: "863b20857e73c5b805c3e1799af0b717803e03fa0d8d6b18cf0d612595d34bc6",
+  },
   /** Release v2.0.0 (r8, 2026-11-27). */
   "yami-os-2.0.0-pacote.tar.zst": {
     tamanho: 279109,

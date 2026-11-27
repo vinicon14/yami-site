@@ -10,7 +10,7 @@ import {
 } from "../lib/yamios/public-manifest";
 
 const PUBLISHED_NAME = "yami-os-1.0.0-pacote.tar.zst";
-const CURRENT_NAME = "yami-os-2.0.0-pacote.tar.zst";
+const CURRENT_NAME = "yami-os-2.0.1-pacote.tar.zst";
 
 describe("manifesto público do YAMI OS", () => {
   it("deriva a URL do pacote publicado e descreve esse pacote", async () => {
@@ -22,9 +22,9 @@ describe("manifesto público do YAMI OS", () => {
     const body = await res.json();
     const pacote = body.pacotes[0];
     expect(new URL(pacote.url).pathname.split("/").pop()).toBe(arquivo);
-    expect(raw.versao).toBe("2.0.0");
-    expect(raw.pacotes[0].versao).toBe("2.0.0");
-    expect(pacote.versao).toBe("2.0.0");
+    expect(raw.versao).toBe("2.0.1");
+    expect(raw.pacotes[0].versao).toBe("2.0.1");
+    expect(pacote.versao).toBe("2.0.1");
     expect(pacote.deVersaoMinima).toBe("1.0.0");
     expect(pacote.url).toBe(releaseAssetUrl(raw.pacotes[0].versao, arquivo));
     expect(pacote.url).toBe(releaseAssetUrl(raw.versao, arquivo));
@@ -34,12 +34,12 @@ describe("manifesto público do YAMI OS", () => {
     expect(pacote.tamanho).toBe(known.tamanho);
     expect(pacote.sha256).toBe(known.sha256);
     expect(body.build).toBe("r8");
-    expect(body.versao).toBe("2.0.0");
+    expect(body.versao).toBe("2.0.1");
     expect(body.pacotes[0].descricao).toBe(raw.pacotes[0].descricao);
     expect(body.iso.partes).toHaveLength(2);
     expect(body.iso.partes.map((part: { url: string }) => part.url)).toEqual([
-      "https://github.com/vinicon14/yamios-releases/releases/download/v2.0.0/yami-os-2.0.0.iso.parte01",
-      "https://github.com/vinicon14/yamios-releases/releases/download/v2.0.0/yami-os-2.0.0.iso.parte02",
+      "https://github.com/vinicon14/yamios-releases/releases/download/v2.0.1/yami-os-2.0.0.iso.parte01",
+      "https://github.com/vinicon14/yamios-releases/releases/download/v2.0.1/yami-os-2.0.0.iso.parte02",
     ]);
     expect(body.iso.partes.map((part: { sha256: string }) => part.sha256)).toEqual([
       "57398228bf6d84ecd983738e686e8bf02a64f231c01f49f0126159ba79bd9338",

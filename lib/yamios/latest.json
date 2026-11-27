@@ -1,25 +1,24 @@
 {
   "produto": "YAMI OS",
   "canal": "estavel",
-  "versao": "2.0.0",
+  "versao": "2.0.1",
   "build": "r8",
   "data": "2026-11-27",
   "notas": [
-    "Persistência total no HD: contas Google, logins/senhas, Wi-Fi, arquivos e apps ficam salvos",
-    "machine-id fixo, chaveiro desbloqueado no login, sync seguro ao desligar e conserto automático após desligamento forçado",
-    "Indicador 'Persistência ativa' na barra da YAMI e comando yami-persistencia",
-    "Caderno, Agenda, Dev Studio, Yami fixa e assistente de primeiro boot",
-    "sudo/pkexec e atualizações corrigidos; OpenCode e loja com pixel art mantidos",
-    "ISO em arquivo único (Google Drive) ou em 2 partes no GitHub"
+    "Instalar aplicativos sem pedir senha: Loja YAMI, apt, flatpak e .deb com dois cliques",
+    "Novo explorador de arquivos 'Arquivos' com HD do YAMI, discos, lixeira, busca, miniaturas e indicador de Persistência",
+    "Correção do apt ('Stale file handle') depois de trocar a ISO: o initrd do HD é atualizado pelo pacote",
+    "Tudo da 2.0.0: persistência total no HD, Caderno, Agenda, Dev Studio, Yami fixa, OpenCode",
+    "A ISO continua a 2.0.0 (arquivo único no Google Drive ou 2 partes no GitHub); a 2.0.1 chega pelo app Atualizações"
   ],
   "pacotes": [
     {
-      "versao": "2.0.0",
+      "versao": "2.0.1",
       "deVersaoMinima": "1.0.0",
-      "sha256": "74aeaa5dcb13edb278e424c69221a7fa774788268b0c4eb2c48abc8bcd91a3c1",
-      "tamanho": 279109,
-      "descricao": "YAMI OS 2.0.0: indicador de persistência, sync seguro ao desligar, Caderno, Agenda, Dev Studio, Yami fixa e assistente de primeiro boot",
-      "arquivo": "yami-os-2.0.0-pacote.tar.zst"
+      "sha256": "863b20857e73c5b805c3e1799af0b717803e03fa0d8d6b18cf0d612595d34bc6",
+      "tamanho": 42666889,
+      "descricao": "YAMI OS 2.0.1: instalar aplicativos sem pedir senha (loja, apt, flatpak e .deb), novo explorador Arquivos e correção do apt depois de trocar a ISO",
+      "arquivo": "yami-os-2.0.1-pacote.tar.zst"
     }
   ],
   "iso": {
@@ -41,7 +40,7 @@
         "tamanho": 1326350336
       }
     ],
-    "observacao": "ISO 2.0.0 completa: baixe o arquivo único (Google Drive) ou as 2 partes, confira o sha256 e junte (cat parte01 parte02 > yami-os-amd64.iso)."
+    "observacao": "ISO 2.0.0 (a 2.0.1 vem como pacote pelo app Atualizações; as partes também estão na release v2.0.1): baixe o arquivo único (Google Drive) ou as 2 partes, confira o sha256 e junte (cat parte01 parte02 > yami-os-amd64.iso)."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",
