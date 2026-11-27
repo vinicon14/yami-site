@@ -2,11 +2,22 @@ import { YAMI_OS_NAME } from "@/lib/yamios/brand";
 import {
   formatByteSize,
   resolveFreeIsoDownload,
+  resolveSingleFileIso,
   type IsoManifestSource,
 } from "@/lib/yamios/iso-downloader";
 
 export function IsoDownloader({ source }: { source: IsoManifestSource }) {
   const offer = resolveFreeIsoDownload(source);
+  const single = resolveSingleFileIso(source);
+
+  if (!offer.active && single) {
+    return (
+      <div className="card iso-offer p-5" data-iso-offer="ready">
+        <p className="kicker">Download gratuito</p>
+        <SingleFileBlock single={single} />
+      </div>
+    );
+  }
 
   if (!offer.active) {
     return (
@@ -37,6 +48,10 @@ export function IsoDownloader({ source }: { source: IsoManifestSource }) {
           O GitHub publica o SHA-256 de cada parte; o SHA-256 da ISO montada não foi informado.
         </p>
       )}
+      {single ? <SingleFileBlock single={single} /> : null}
+      {single && !singleFile ? (
+        <p className="mt-5 text-sm font-medium">Ou baixe em partes (reserva, GitHub):</p>
+      ) : null}
       <ul className="mt-4 space-y-4 text-sm">
         {offer.parts.map((part) => (
           <li key={`${part.index}-${part.fileName}`} className="min-w-0">
@@ -68,6 +83,26 @@ export function IsoDownloader({ source }: { source: IsoManifestSource }) {
           <pre className="iso-commands mt-2">{offer.windows.join("\n")}</pre>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SingleFileBlock({ single }: { single: { href: string; fileName: string; sha256: string; tamanho: number; host: string } }) {
+  const where = single.host.includes("google") ? "Google Drive" : single.host;
+  return (
+    <div className="mt-4 min-w-0 text-sm" data-iso-single="ready">
+      <a
+        className="inline-flex min-h-11 items-center font-medium text-accent-text underline underline-offset-2"
+        href={single.href}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {`Baixar a ISO em um arquivo só${single.tamanho > 0 ? ` (${formatByteSize(single.tamanho)})` : ""} · ${where}`}
+      </a>
+      <p className="text-muted">Salve como {single.fileName}. Não precisa juntar partes.</p>
+      {single.sha256 ? (
+        <p className="iso-hash font-mono text-xs leading-relaxed text-muted">SHA-256: {single.sha256}</p>
+      ) : null}
     </div>
   );
 }

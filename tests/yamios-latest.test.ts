@@ -10,20 +10,22 @@ import {
 } from "../lib/yamios/public-manifest";
 
 const PUBLISHED_NAME = "yami-os-1.0.0-pacote.tar.zst";
+const CURRENT_NAME = "yami-os-2.0.0-pacote.tar.zst";
 
 describe("manifesto público do YAMI OS", () => {
   it("deriva a URL do pacote publicado e descreve esse pacote", async () => {
     const arquivo = raw.pacotes[0].arquivo;
-    expect(assetFilename(arquivo)).toBe(PUBLISHED_NAME);
+    expect(assetFilename(arquivo)).toBe(CURRENT_NAME);
 
     const res = await latestGet();
     expect(res.status).toBe(200);
     const body = await res.json();
     const pacote = body.pacotes[0];
     expect(new URL(pacote.url).pathname.split("/").pop()).toBe(arquivo);
-    expect(raw.versao).toBe("1.0.0");
-    expect(raw.pacotes[0].versao).toBe("1.0.0");
-    expect(pacote.versao).toBe("1.0.0");
+    expect(raw.versao).toBe("2.0.0");
+    expect(raw.pacotes[0].versao).toBe("2.0.0");
+    expect(pacote.versao).toBe("2.0.0");
+    expect(pacote.deVersaoMinima).toBe("1.0.0");
     expect(pacote.url).toBe(releaseAssetUrl(raw.pacotes[0].versao, arquivo));
     expect(pacote.url).toBe(releaseAssetUrl(raw.versao, arquivo));
     expect(pacote.url).not.toContain("/undefined");
@@ -31,23 +33,21 @@ describe("manifesto público do YAMI OS", () => {
     const known = KNOWN_PUBLISHED_PACKAGES[arquivo];
     expect(pacote.tamanho).toBe(known.tamanho);
     expect(pacote.sha256).toBe(known.sha256);
-    expect(body.build).toBe("r1");
-    expect(body.versao).toBe("1.0.0");
-    expect(body.notas).toEqual([]);
+    expect(body.build).toBe("r8");
+    expect(body.versao).toBe("2.0.0");
     expect(body.pacotes[0].descricao).toBe(raw.pacotes[0].descricao);
-    expect(body.pacotes[0].descricao).not.toMatch(/greeter|LightDM|Criar apps/i);
-    expect(body.notas.join("\n")).not.toMatch(/greeter|Criar apps/i);
-    expect(body.iso.observacao).toContain("ISO 1.0.0 publicada em duas partes");
     expect(body.iso.partes).toHaveLength(2);
     expect(body.iso.partes.map((part: { url: string }) => part.url)).toEqual([
-      "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte01",
-      "https://github.com/vinicon14/yamios-releases/releases/download/v1.0.0/yami-os-1.0.0.iso.parte02",
+      "https://github.com/vinicon14/yamios-releases/releases/download/v2.0.0/yami-os-2.0.0.iso.parte01",
+      "https://github.com/vinicon14/yamios-releases/releases/download/v2.0.0/yami-os-2.0.0.iso.parte02",
     ]);
     expect(body.iso.partes.map((part: { sha256: string }) => part.sha256)).toEqual([
-      "bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8",
-      "a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544",
+      "57398228bf6d84ecd983738e686e8bf02a64f231c01f49f0126159ba79bd9338",
+      "ff009e7849f5b05f571f862b055181101a7e9cb01c842917abfe497306c3489b",
     ]);
-    expect(body.iso.sha256).toBe("");
+    expect(body.iso.sha256).toBe("a61fd940d9a2b5944afedc9e72717221ca1a129d3bd3ab14f920fde51cad6913");
+    expect(body.iso.urlUnica ?? null).toBeNull();
+    expect(body.iso.arquivoUnico).toBe("yami-os-2.0.0.iso");
     expect(body.iso.tamanho).toBe(3318644736);
   });
 

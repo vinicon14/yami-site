@@ -1,37 +1,47 @@
 {
   "produto": "YAMI OS",
   "canal": "estavel",
-  "versao": "1.0.0",
-  "build": "r1",
-  "data": "2026-11-23",
-  "notas": [],
+  "versao": "2.0.0",
+  "build": "r8",
+  "data": "2026-11-27",
+  "notas": [
+    "Persistência total no HD: contas Google, logins/senhas, Wi-Fi, arquivos e apps ficam salvos",
+    "machine-id fixo, chaveiro desbloqueado no login, sync seguro ao desligar e conserto automático após desligamento forçado",
+    "Indicador 'Persistência ativa' na barra da YAMI e comando yami-persistencia",
+    "Caderno, Agenda, Dev Studio, Yami fixa e assistente de primeiro boot",
+    "sudo/pkexec e atualizações corrigidos; OpenCode e loja com pixel art mantidos",
+    "ISO em arquivo único (Google Drive) ou em 2 partes no GitHub"
+  ],
   "pacotes": [
     {
-      "versao": "1.0.0",
-      "deVersaoMinima": "0.8.0",
-      "arquivo": "yami-os-1.0.0-pacote.tar.zst",
-      "sha256": "3972f0f55000a185e76922406e2261f32f8ee782252a58da7424389755e96008",
-      "tamanho": 223924,
-      "descricao": "YAMI OS 1.0.0: login, contas, loja de apps e instalacao"
+      "versao": "2.0.0",
+      "deVersaoMinima": "1.0.0",
+      "sha256": "74aeaa5dcb13edb278e424c69221a7fa774788268b0c4eb2c48abc8bcd91a3c1",
+      "tamanho": 279109,
+      "descricao": "YAMI OS 2.0.0: indicador de persistência, sync seguro ao desligar, Caderno, Agenda, Dev Studio, Yami fixa e assistente de primeiro boot",
+      "arquivo": "yami-os-2.0.0-pacote.tar.zst"
     }
   ],
   "iso": {
     "url": null,
-    "sha256": "",
+    "urlUnica": null,
+    "arquivoUnico": "yami-os-2.0.0.iso",
+    "sha256": "a61fd940d9a2b5944afedc9e72717221ca1a129d3bd3ab14f920fde51cad6913",
     "tamanho": 3318644736,
+    "kernel": "6.8.0-149-generic",
     "partes": [
       {
-        "arquivo": "yami-os-1.0.0.iso.parte01",
-        "sha256": "bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8",
+        "arquivo": "yami-os-2.0.0.iso.parte01",
+        "sha256": "57398228bf6d84ecd983738e686e8bf02a64f231c01f49f0126159ba79bd9338",
         "tamanho": 1992294400
       },
       {
-        "arquivo": "yami-os-1.0.0.iso.parte02",
-        "sha256": "a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544",
+        "arquivo": "yami-os-2.0.0.iso.parte02",
+        "sha256": "ff009e7849f5b05f571f862b055181101a7e9cb01c842917abfe497306c3489b",
         "tamanho": 1326350336
       }
     ],
-    "observacao": "ISO 1.0.0 publicada em duas partes na release oficial. Confira o SHA-256 de cada parte; o script do site junta os arquivos e valida as partes antes de gravar o pendrive."
+    "observacao": "ISO 2.0.0 completa: baixe o arquivo único (Google Drive) ou as 2 partes, confira o sha256 e junte (cat parte01 parte02 > yami-os-amd64.iso)."
   },
   "fontes": {
     "vercel": "https://yami-site-pi.vercel.app/api/yamios/latest",

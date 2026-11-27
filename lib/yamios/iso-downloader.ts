@@ -1,5 +1,8 @@
 import { YAMI_OS_FREE_ISO_FROM, YAMI_OS_ISO_SOON } from "@/lib/yamios/brand";
 import { assetFilename, filenameFromUrl, releaseAssetUrl } from "@/lib/yamios/public-manifest";
+import { validSingleFileUrl } from "@/lib/yamios/single-file";
+
+export { validSingleFileUrl };
 
 export type IsoPartSource = {
   url?: string;
@@ -12,6 +15,9 @@ export type IsoManifestSource = {
   versao?: string;
   iso?: {
     url?: string | null;
+    /** Link da ISO inteira (arquivo único, ex.: Google Drive). Pode vir da env YAMIOS_ISO_URL_UNICA. */
+    urlUnica?: string | null;
+    arquivoUnico?: string;
     sha256?: string;
     tamanho?: number;
     partes?: IsoPartSource[];
@@ -202,4 +208,28 @@ export function resolveFreeIsoDownload(source: IsoManifestSource): FreeIsoReady 
     linux: commands.linux,
     windows: commands.windows,
   };
+}
+
+export type SingleFileIso = {
+  href: string;
+  fileName: string;
+  sha256: string;
+  tamanho: number;
+  host: string;
+};
+
+/**
+ * Download da ISO em um arquivo só. Ordem: variável de ambiente YAMIOS_ISO_URL_UNICA
+ * (Vercel → Settings → Environment Variables) e depois `iso.urlUnica` em lib/yamios/latest.json.
+ * Sem link válido, o site mostra só as partes do GitHub (que continuam como reserva).
+ */
+export function resolveSingleFileIso(source: IsoManifestSource): SingleFileIso | null {
+  const fromEnv = typeof process !== "undefined" ? process.env.YAMIOS_ISO_URL_UNICA : undefined;
+  const href = validSingleFileUrl(fromEnv) ?? validSingleFileUrl(source.iso?.urlUnica);
+  if (!href) return null;
+  const sha256 = validDigest(source.iso?.sha256) ?? "";
+  const tamanho = validSize(source.iso?.tamanho) ?? 0;
+  const version = source.versao?.trim() ?? "";
+  const fileName = assetFilename(source.iso?.arquivoUnico) ?? (version ? `yami-os-${version}.iso` : "yami-os-amd64.iso");
+  return { href, fileName, sha256, tamanho, host: new URL(href).hostname };
 }

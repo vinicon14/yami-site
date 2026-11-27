@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CopyButton } from "@/components/CopyButton";
 import { BOOT_MENU_KEYS } from "@/lib/install-guide";
-import { formatByteSize, publicIsoHref } from "@/lib/yamios/iso-downloader";
+import { formatByteSize, publicIsoHref, resolveSingleFileIso } from "@/lib/yamios/iso-downloader";
 import { YAMI_OS_NAME } from "@/lib/yamios/brand";
 import {
   JOIN_SCRIPT_FILES,
@@ -122,6 +122,7 @@ export function InstallGuide({ source }: { source: GuideSource }) {
           },
         ]
       : [];
+  const single = resolveSingleFileIso(source as Parameters<typeof resolveSingleFileIso>[0]);
   const needsLicense = downloads.some((item) => pointsAtLicense(item.href));
   const joins = (plan?.parts.length ?? downloads.length) > 1;
   const isoSha = plan?.isoSha256 ?? source.iso?.sha256 ?? "";
@@ -169,6 +170,28 @@ export function InstallGuide({ source }: { source: GuideSource }) {
       <div className="mt-8 space-y-6">
         <section id="baixar" className="card scroll-mt-24 p-5">
           <h2 className="text-2xl font-semibold tracking-tight text-balance">1. Baixar o sistema</h2>
+          {single ? (
+            <div className="mt-3 rounded-lg border border-accent/40 p-4" data-iso-single="ready">
+              <p className="text-sm leading-relaxed sm:text-base">
+                Jeito mais fácil: a ISO inteira, em um arquivo só (não precisa juntar partes).
+              </p>
+              <a
+                className="mt-2 inline-flex min-h-11 items-center font-medium text-accent-text underline underline-offset-2"
+                href={single.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {`Baixar a ISO em um arquivo só${single.tamanho > 0 ? ` (${formatByteSize(single.tamanho)})` : ""}${single.host.includes("google") ? " · Google Drive" : ""}`}
+              </a>
+              <p className="mt-1 text-sm leading-relaxed">
+                Salve com o nome <strong className="font-mono font-medium">{single.fileName}</strong>. Depois pule para o passo 2 só para conferir o código.
+              </p>
+              {single.sha256 ? <HashLine label="SHA-256 da ISO" value={single.sha256} /> : null}
+              {downloads.length > 0 ? (
+                <p className="mt-3 text-sm text-muted">Se o Drive não abrir, use as partes abaixo (reserva no GitHub).</p>
+              ) : null}
+            </div>
+          ) : null}
           {downloads.length === 0 ? (
             <p className="mt-3 text-sm leading-relaxed text-muted">
               A ISO desta versão ainda não está publicada. Se você já tem o {YAMI_OS_NAME} instalado, use o pacote de atualização.

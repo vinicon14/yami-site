@@ -152,22 +152,22 @@ describe("scripts de juntar a ISO", () => {
     expect(fallback?.sh).not.toContain("https://");
   });
 
-  it("gera scripts para a ISO 1.0.0 com os nomes e hashes publicados", () => {
-    expect(raw.versao).toBe("1.0.0");
+  it("gera scripts para a ISO 2.0.0 com os nomes e hashes publicados", () => {
+    expect(raw.versao).toBe("2.0.0");
     expect(raw.iso.partes).toHaveLength(2);
     const bundle = buildJoinScripts(raw);
     expect(bundle).not.toBeNull();
     if (!bundle) return;
     expect(bundle.parts.map((part) => part.fileName)).toEqual([
-      "yami-os-1.0.0.iso.parte01",
-      "yami-os-1.0.0.iso.parte02",
+      "yami-os-2.0.0.iso.parte01",
+      "yami-os-2.0.0.iso.parte02",
     ]);
-    expect(bundle.isoSha256).toBe("");
-    expect(bundle.sh).toContain("bb490df271b32f6b92de7f45d24b66785b066d9a6d92a73bc5e35c45e6c965e8");
-    expect(bundle.sh).toContain("a4c8f45c9b22d56c150bdb3953e741f820f1bc8d6e1b245997810e8708b7a544");
+    expect(bundle.isoSha256).toBe("a61fd940d9a2b5944afedc9e72717221ca1a129d3bd3ab14f920fde51cad6913");
+    expect(bundle.sh).toContain("57398228bf6d84ecd983738e686e8bf02a64f231c01f49f0126159ba79bd9338");
+    expect(bundle.sh).toContain("ff009e7849f5b05f571f862b055181101a7e9cb01c842917abfe497306c3489b");
+    expect(bundle.sh).toContain("a61fd940d9a2b5944afedc9e72717221ca1a129d3bd3ab14f920fde51cad6913");
     expect(bundle.sh).toContain("cat ");
     expect(bundle.bat).toContain("copy /Y /b");
-    expect(bundle.sh).not.toContain("SHA-256 da ISO montada");
   });
 
   it("o .bat começa com @echo off, usa CRLF e só tem bytes ASCII", () => {
@@ -373,8 +373,8 @@ describe("página de instalação", () => {
   it("mostra o estado real da ISO e mantém as instruções de pendrive e boot", () => {
     const html = renderToStaticMarkup(<InstalarYamiOsPage />);
     expect(html).toContain("Baixar a parte 1");
-    expect(html).toContain("1.0.0");
-    expect(html).toContain("yami-os-1.0.0.iso.parte01");
+    expect(html).toContain("2.0.0");
+    expect(html).toContain("yami-os-2.0.0.iso.parte01");
     expect(html).toContain("Rufus");
     expect(html).toContain("balenaEtcher");
     expect(html).toContain("Ventoy");

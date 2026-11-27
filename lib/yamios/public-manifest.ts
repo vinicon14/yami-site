@@ -1,4 +1,5 @@
 import { YAMI_OS_NAME } from "@/lib/yamios/brand";
+import { validSingleFileUrl } from "@/lib/yamios/single-file";
 
 /**
  * O manifesto versionado guarda o nome do arquivo (`arquivo`).
@@ -29,6 +30,11 @@ export const KNOWN_PUBLISHED_PACKAGES: Record<string, { tamanho: number; sha256:
   "yami-os-1.0.0-pacote.tar.zst": {
     tamanho: 223924,
     sha256: "3972f0f55000a185e76922406e2261f32f8ee782252a58da7424389755e96008",
+  },
+  /** Release v2.0.0 (r8, 2026-11-27). */
+  "yami-os-2.0.0-pacote.tar.zst": {
+    tamanho: 279109,
+    sha256: "74aeaa5dcb13edb278e424c69221a7fa774788268b0c4eb2c48abc8bcd91a3c1",
   },
 };
 
@@ -61,6 +67,8 @@ export type YamiosManifestSource = {
   pacotes?: ManifestPacote[];
   iso?: {
     url?: string | null;
+    urlUnica?: string | null;
+    arquivoUnico?: string;
     sha256?: string;
     tamanho?: number;
     kernel?: string;
@@ -89,6 +97,9 @@ export type PublicYamiosManifest = {
   pacotes: PublicPacote[];
   iso: {
     url: string | null;
+    /** ISO inteira em um arquivo só (Google Drive). null enquanto o link não for configurado. */
+    urlUnica: string | null;
+    arquivoUnico: string;
     sha256: string;
     tamanho: number;
     kernel: string;
@@ -199,6 +210,8 @@ export function toPublicManifest(raw: YamiosManifestSource): PublicYamiosManifes
     pacotes,
     iso: {
       url: publicIsoUrl,
+      urlUnica: validSingleFileUrl(process.env.YAMIOS_ISO_URL_UNICA) ?? validSingleFileUrl(raw.iso?.urlUnica),
+      arquivoUnico: assetFilename(raw.iso?.arquivoUnico) ?? (versao ? `yami-os-${versao}.iso` : "yami-os-amd64.iso"),
       sha256: raw.iso?.sha256 ?? "",
       tamanho: raw.iso?.tamanho ?? 0,
       kernel: raw.iso?.kernel ?? "",
